@@ -117,6 +117,69 @@ function bpDelta(me, enemy, win){
   return Math.round(delta);
 }
 
+
+/* ---------- уведомление в Telegram ----------
+   Бот может писать тому, кто открывал игру и разрешил ему это — Telegram
+   спрашивает разрешение сам при первом запуске Mini App. Кто не разрешил,
+   получит от API отказ, и это нормально: молча пропускаем.
+
+   Сообщение отправляется в фоне через ctx.waitUntil, иначе ответ на драку
+   ждал бы ещё один сетевой запрос.
+
+   Формулировка честная: денег мы не отнимаем, только очки. «Тебя ограбили»
+   отправило бы человека искать пропавшие деньги, которых он не терял. */
+const NOTIFY_GAP = 600;      // не чаще раза в 10 минут одному человеку
+
+/* Род по имени не угадаешь — «напал Алена» и «не справилась Николай» одинаково
+   плохи. Поэтому в тексте нет ни одного глагола в прошедшем времени. */
+function plural(n, one, few, many){
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b > 1 && b < 5) return few;
+  if (b === 1) return one;
+  return many;
+}
+
+async function notifyAttacked(env, defender, attackerName, defenderWon, delta){
+  if (!env.BOT_TOKEN) return;
+
+  const n = Math.abs(delta);
+  const points = n + ' ' + plural(n, 'очко', 'очка', 'очков');
+  const outcome = defenderWon
+    ? 'нападение отбито · +' + points
+    : 'поражение · −' + points;
+
+  const lines = [
+    '⚡ На тебя напали.',
+    attackerName + ' · ' + outcome,
+    'Деньги и прогресс целы, потеряны только боевые очки.'
+  ];
+  if (!defenderWon) lines.push('', 'Зайди и прокачай вещи, чтобы ответить.');
+
+  const body = {
+    chat_id: defender.id,
+    text: lines.join('\n'),
+    reply_markup: env.GAME_URL ? {
+      inline_keyboard: [[{ text: 'Открыть игру', web_app: { url: env.GAME_URL } }]]
+    } : undefined
+  };
+
+  const send = async payload => fetch(
+    `https://api.telegram.org/bot${env.BOT_TOKEN}/sendMessage`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload) });
+
+  try {
+    const res = await send(body);
+    // Кнопку web_app Telegram принимает не во всех случаях. Сообщение важнее
+    // кнопки, поэтому при отказе шлём ещё раз без неё.
+    if (!res.ok && body.reply_markup){
+      const plain = { chat_id: body.chat_id, text: body.text };
+      await send(plain);
+    }
+  } catch(e){ /* не достучались — драка от этого не отменяется */ }
+}
+
 /* ---------- ответы ---------- */
 function cors(env){
   return {
@@ -141,7 +204,7 @@ async function topRows(env, order){
 }
 
 export default {
-  async fetch(request, env){
+  async fetch(request, env, ctx){
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
@@ -232,10 +295,20 @@ export default {
       const myBp = Math.max(0, me.bp + delta);
       const foeBp = Math.max(0, enemy.bp - delta);
 
+      // Уведомляем не чаще раза в NOTIFY_GAP: серия драк не должна
+      // превращаться в серию сообщений.
+      const foeRow = await env.DB.prepare(
+        'SELECT notified FROM players WHERE id = ?1').bind(enemy.id).first();
+      const tellHim = !foeRow || (now - (foeRow.notified || 0) >= NOTIFY_GAP);
+
       await env.DB.batch([
         env.DB.prepare('UPDATE players SET bp = ?2, last_fight = ?3 WHERE id = ?1').bind(me.id, myBp, now),
-        env.DB.prepare('UPDATE players SET bp = ?2 WHERE id = ?1').bind(enemy.id, foeBp)
+        env.DB.prepare('UPDATE players SET bp = ?2' + (tellHim ? ', notified = ?3' : '') + ' WHERE id = ?1')
+          .bind(...(tellHim ? [enemy.id, foeBp, now] : [enemy.id, foeBp]))
       ]);
+
+      if (tellHim && ctx && ctx.waitUntil)
+        ctx.waitUntil(notifyAttacked(env, enemy, me.name, !r.win, delta));
 
       return json(env, {
         win: r.win, rounds: r.rounds, left: r.left, delta, bp: myBp,

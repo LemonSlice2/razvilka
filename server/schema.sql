@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS players (
   power      REAL    NOT NULL DEFAULT 0,     -- сила из вещей
   health     REAL    NOT NULL DEFAULT 100,   -- здоровье из вещей
   bp         REAL    NOT NULL DEFAULT 1000,  -- боевые очки, меняются по итогам драк
-  last_fight INTEGER NOT NULL DEFAULT 0      -- когда дрался в последний раз
+  last_fight INTEGER NOT NULL DEFAULT 0,     -- когда дрался в последний раз
+  notified   INTEGER NOT NULL DEFAULT 0      -- когда ему слали уведомление о нападении
 );
 CREATE INDEX IF NOT EXISTS players_score ON players(score DESC);
 CREATE INDEX IF NOT EXISTS players_bp ON players(bp DESC);
