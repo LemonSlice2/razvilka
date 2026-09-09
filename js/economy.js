@@ -47,6 +47,8 @@ function carryOf(src){
     meta:     src && src.meta ? { ...src.meta } : {},
     mastered: src && src.mastered ? src.mastered.slice() : [],
     achieved: src && src.achieved ? src.achieved.slice() : [],
+    // Вещи переживают перерождение: это имущество персонажа, а не забега
+    gear: src && src.gear ? { ...src.gear } : {},
     stats: {
       taps:    src && src.stats ? (src.stats.taps    || 0) : 0,
       bonuses: src && src.stats ? (src.stats.bonuses || 0) : 0,
@@ -155,6 +157,23 @@ function spendFocus(){
 function regenFocus(dt){
   const regen = FOCUS_REGEN * (perk('ergonomika') ? 2 : 1) * (1 + metaLevel('golova') * 0.25);
   S.focus = Math.min(FOCUS_MAX, S.focus + regen * dt);
+}
+
+/* ============================================================
+   ПЕРСОНАЖ
+   Сила и здоровье собираются из вещей. На доход и тап не влияют:
+   проценты уже заняты палатой влияния, а это отдельная ось — для драки.
+   ============================================================ */
+function powerOf(){
+  return GEAR.reduce((n, g) => n + g.power * gearLevel(g.id), 0);
+}
+function healthOf(){
+  return 100 + GEAR.reduce((n, g) => n + g.health * gearLevel(g.id), 0);
+}
+// Одно число, по которому людей удобно сравнивать. Здоровье под корнем,
+// иначе выгодно было бы качать только его: живучесть без силы боёв не выигрывает.
+function combatRating(){
+  return Math.round(powerOf() * Math.sqrt(healthOf() / 100) * 10) / 10;
 }
 
 function earn(amount){

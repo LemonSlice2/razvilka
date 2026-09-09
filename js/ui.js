@@ -368,13 +368,27 @@ function renderProfile(){
   const done = S.achieved.length;
 
   const facts = [
+    [fmt(powerOf()), 'сила'],
+    [fmt(healthOf()), 'здоровье'],
+    [combatRating(), 'боевой рейтинг'],
     [S.runs, plural(S.runs, 'перерождение', 'перерождения', 'перерождений')],
     ['×' + legacyMult().toFixed(2), 'влияние'],
-    [S.stats.paths.length + '/' + PATHS.length, 'путей пройдено'],
-    [done + '/' + ACHIEVEMENTS.length, 'достижений']
+    [S.stats.paths.length + '/' + PATHS.length, 'путей пройдено']
   ];
 
   $('profile').innerHTML =
+    `<div class="gearstrip">` + GEAR.map(g => {
+      const lvl = gearLevel(g.id), maxed = lvl >= g.max;
+      const price = gearCost(g);
+      const can = !maxed && S.money >= price;
+      return `<button class="gearcell${lvl ? ' has' : ''}${can ? ' can' : ''}"
+                      data-gear="${g.id}" ${maxed || !can ? 'disabled' : ''}>
+          <div class="lvl">${lvl ? 'ур. ' + lvl : '—'}</div>
+          <div class="gn">${g.name}</div>
+          <div class="gp">${maxed ? 'предел' : fmt(price) + '$'}</div>
+        </button>`;
+    }).join('') + `</div>
+     <div class="capnote gearnote">${gearHint()}</div>` +
     `<div class="pcard">
        <div class="pemblem" style="--pc:${p.color}">${p.name.charAt(0)}</div>
        <div class="pwho">
@@ -395,9 +409,36 @@ function renderProfile(){
   // Обновление асинхронное: рисуем что есть, а когда придёт свежее —
   // перерисовываем ещё раз. refresh() отдаёт false, если ничего не менялось,
   // поэтому в петлю это не сваливается.
+  document.querySelectorAll('#profile .gearcell').forEach(b =>
+    b.addEventListener('click', () => buyGear(b.dataset.gear)));
+
   Rating.refresh().then(changed => {
     if (changed && activePane === 'profile') renderProfile();
   });
+}
+
+/* Подсказка под полосой вещей: что вообще происходит и зачем это нужно.
+   Без неё непонятно, почему сила ничего не даёт к доходу. */
+function gearHint(){
+  const next = GEAR.filter(g => gearLevel(g.id) < g.max)
+                   .sort((a, b) => gearCost(a) - gearCost(b))[0];
+  if (!next) return 'Все вещи докачаны до предела.';
+  if (!powerOf()) return 'Вещи остаются с тобой после перерождения. На доход не влияют — они для драки с другими игроками.';
+  return 'Ближайшая покупка: ' + next.name + ' за ' + fmt(gearCost(next)) + '$.';
+}
+
+function buyGear(id){
+  const g = GEAR.find(x => x.id === id);
+  if (!g) return;
+  const lvl = gearLevel(id);
+  const price = gearCost(g);
+  if (lvl >= g.max || S.money < price) return;
+  S.money -= price;
+  invest(price);
+  S.gear[id] = lvl + 1;
+  Sound.buy(); haptic(16);
+  checkAchievements();
+  renderProfile(); draw(); save();
 }
 
 const RANK_NOTE = {
