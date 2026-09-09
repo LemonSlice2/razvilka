@@ -597,10 +597,17 @@ function foeFightBox(f, iAmHim){
   if (iAmHim) return '<div class="capnote">Это ты. На себя не нападёшь.</div>';
   if (!powerOf())
     return '<div class="capnote">Драться нечем. Улучши любую вещь — сила появится.</div>' + msg;
-  if (!f.power)
-    return '<div class="capnote">У него нечем защищаться — драки не выйдет.</div>' + msg;
+
+  // Слабого бить не запрещено, но и смысла нет: очков почти не дадут.
+  // Запрет сделал бы выгодным вообще не покупать оружие.
+  const mine = powerOf() * Math.sqrt(healthOf() / 100);
+  const his  = f.power * Math.sqrt(Math.max(1, f.health) / 100);
+  const weak = his < mine * 0.5
+    ? '<div class="capnote">Он заметно слабее — за такую победу очков дадут почти нисколько.</div>'
+    : '';
+
   return '<button id="attackbtn"' + (fightBusy ? ' disabled' : '') + '>' +
-         (fightBusy ? 'Дерусь…' : 'Напасть') + '</button>' + msg;
+         (fightBusy ? 'Дерусь…' : 'Напасть') + '</button>' + weak + msg;
 }
 
 let fightBusy = false, fightMsg = null;

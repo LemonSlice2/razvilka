@@ -94,12 +94,27 @@ function resolveFight(a, b){
   return { win: bh <= 0, rounds, left: Math.max(0, Math.round(ah)) };
 }
 
-/* Очки по Эло: у сильного отобрать много, у слабого — мало.
-   Так фарм слабых противников быстро перестаёт окупаться. */
+/* Боевая мощь: сила решает, здоровье под корнем — живучесть без силы
+   боёв не выигрывает. */
+function might(p){ return p.power * Math.sqrt(Math.max(1, p.health) / 100); }
+
+/* Очки по Эло плюс поправка на разрыв в мощи.
+   Эло само по себе даёт мало за победу над низкорейтинговым, но новичок
+   начинает с той же тысячи, что и все, — и первое избиение приносило бы
+   полновесные очки. Поэтому победа над заведомо слабым домножается на
+   отношение мощей: избивать беспомощных бессмысленно, а не запрещено.
+
+   Запрещать нельзя: запрет на нападение к безоружным делал бы выгодным
+   вообще не покупать оружие — неуязвимость за безделье. */
 const K_FACTOR = 24;
-function bpDelta(mine, theirs, win){
-  const expected = 1 / (1 + Math.pow(10, (theirs - mine) / 400));
-  return Math.round(K_FACTOR * ((win ? 1 : 0) - expected));
+function bpDelta(me, enemy, win){
+  const expected = 1 / (1 + Math.pow(10, (enemy.bp - me.bp) / 400));
+  let delta = K_FACTOR * ((win ? 1 : 0) - expected);
+  if (win){
+    const ratio = might(enemy) / Math.max(1, might(me));
+    if (ratio < 1) delta *= Math.max(0.08, ratio);
+  }
+  return Math.round(delta);
 }
 
 /* ---------- ответы ---------- */
@@ -211,10 +226,9 @@ export default {
       const enemy = await env.DB.prepare(
         'SELECT id, name, power, health, bp FROM players WHERE id = ?1').bind(targetId).first();
       if (!enemy) return json(env, { error: 'такого игрока нет' }, 404);
-      if (enemy.power <= 0) return json(env, { error: 'у него нечем защищаться' }, 400);
 
       const r = resolveFight(me, enemy);
-      const delta = bpDelta(me.bp, enemy.bp, r.win);
+      const delta = bpDelta(me, enemy, r.win);
       const myBp = Math.max(0, me.bp + delta);
       const foeBp = Math.max(0, enemy.bp - delta);
 
