@@ -30,6 +30,20 @@ const TG = (() => {
   return api;
 })();
 
+/* Облачное хранилище Telegram: данные привязаны к аккаунту, поэтому один забег
+   на телефоне и на компьютере. Появилось в Bot API 6.9 — на клиентах постарше
+   просто не включаем, игра продолжает жить на локальном хранилище.
+
+   Store остаётся единственным местом, знающим, где живут данные: здесь только
+   переходник к нему. */
+if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast('6.9')){
+  Store.useRemote({
+    get(key, cb){ TG.CloudStorage.getItem(key, cb); },
+    set(key, value){ TG.CloudStorage.setItem(key, value, () => {}); },
+    remove(key){ TG.CloudStorage.removeItem(key, () => {}); }
+  });
+}
+
 /* Вибрация. В Telegram она идёт через их API и работает на iPhone,
    где navigator.vibrate из браузера недоступен. Снаружи Telegram
    остаётся прежнее поведение. */

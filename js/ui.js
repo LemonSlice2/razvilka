@@ -91,18 +91,24 @@ function buyMeta(m){
   renderChoice(c);
 }
 
-function showChoice(carry){
-  S = null;
+/* Всё, что живёт только в текущей сессии: усиления, заряды, откаты, таймеры.
+   Нужно и при возврате к выбору пути, и при переходе на сейв с другого устройства. */
+function resetSession(){
   buffs = [];
   charges = { left: 0, mult: 1 };
   abilityReadyAt = 0;
   pendingEvent = null;
-  $('ability').classList.add('hidden');
-  $('eventcard').classList.add('hidden');
   clearTimeout(bonusTimer);
   clearTimeout(eventTimer);
   document.querySelectorAll('.bonus').forEach(el => el.remove());
+  $('eventcard').classList.add('hidden');
   $('buffline').innerHTML = '';
+}
+
+function showChoice(carry){
+  S = null;
+  resetSession();
+  $('ability').classList.add('hidden');
   $('game').classList.add('hidden');
   $('choose').classList.remove('hidden');
   shopBuilt = false;
@@ -182,6 +188,7 @@ function buildPerks(){
 function buyPerk(pk){
   if (perk(pk.id) || S.money < pk.cost) return;
   S.money -= pk.cost;
+  invest(pk.cost);
   S.perks.push(pk.id);
   Sound.rebirth(); haptic([16, 50, 24]);
   checkMastery();
@@ -195,6 +202,7 @@ function buy(u){
   const { n, cost } = costOfMany(u, want);
   if (n <= 0 || S.money < cost) return;
   S.money -= cost;
+  invest(cost);
   S.owned[u.id] = owned(u.id) + n;
   Sound.buy(); haptic(14);
   checkAchievements();
@@ -292,9 +300,21 @@ function renderCapital(){
        </div>`).join('') + '</div>';
 
   $('capital').innerHTML =
-    `<div class="capsum">
-       <div class="box tap"><div class="k">Сила тапа</div><div class="v" id="capTap"></div></div>
-       <div class="box inc"><div class="k">Доход</div><div class="v" id="capInc"></div></div>
+    `<div class="capgroup">
+       <h3>За всё время</h3>
+       <div class="capsum life">
+         <div class="box"><div class="k">Всего заработано</div><div class="v" id="capLifeEarned"></div></div>
+         <div class="box"><div class="k">Вложено в развитие</div><div class="v" id="capLifeSpent"></div></div>
+       </div>
+       <div class="capnote" id="capRuns"></div>
+     </div>
+     <div class="capgroup">
+       <h3>Этот забег</h3>
+       <div class="capsum">
+         <div class="box tap"><div class="k">Сила тапа</div><div class="v" id="capTap"></div></div>
+         <div class="box inc"><div class="k">Доход</div><div class="v" id="capInc"></div></div>
+       </div>
+       <div class="capnote" id="capRun"></div>
      </div>`
     + group('Отдача от рук', hands, 'tap')
     + group('Работает само', itself, 'inc')
@@ -310,10 +330,20 @@ function renderCapital(){
 }
 
 function drawCapitalTotals(){
-  const t = $('capTap'), i = $('capInc');
-  if (!t || !i) return;
+  const t = $('capTap');
+  if (!t) return;                      // вкладка ещё не строилась
   t.textContent = '+' + fmt(perTap() * focusMult()) + '$';
-  i.textContent = '+' + fmt(perSecond()) + '$/сек';
+  $('capInc').textContent = '+' + fmt(perSecond()) + '$/сек';
+
+  const st = S.stats;
+  $('capLifeEarned').textContent = fmt(st.earnedTotal) + '$';
+  $('capLifeSpent').textContent  = fmt(st.spentTotal) + '$';
+  $('capRuns').textContent =
+    `${S.runs} ${plural(S.runs,'перерождение','перерождения','перерождений')} · ` +
+    `${fmt(st.taps)} ${plural(st.taps,'тап','тапа','тапов')} · ` +
+    `${S.stats.paths.length} ${plural(S.stats.paths.length,'путь','пути','путей')} из ${PATHS.length}`;
+  $('capRun').textContent =
+    `Заработано ${fmt(S.totalEarned)}$ · в кармане ${fmt(S.money)}$`;
 }
 
 /* ---------- перерождение ---------- */

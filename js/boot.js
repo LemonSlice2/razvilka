@@ -5,8 +5,11 @@
 /* ---------- запуск ---------- */
 function save(){ if (!S) return; S.ts = Date.now(); Store.save(S); }
 
-function boot(){
-  const saved = Store.load();
+/* Войти в сохранение: досчитать офлайн-доход и открыть нужный экран.
+   Одно и то же и для локального сейва при запуске, и для облачного,
+   если игрок решит на него перейти. */
+function enter(saved){
+  resetSession();
   if (saved && saved.path && PATHS.some(p => p.id === saved.path)){
     S = saved;
     Object.assign(S, { perks: saved.perks || [] });
@@ -16,18 +19,71 @@ function boot(){
     Object.assign(S, carryOf(S));
     if (S.path && !S.stats.paths.includes(S.path)) S.stats.paths.push(S.path);
     const earned = perSecond() * elapsed;
-    S.money += earned; S.totalEarned += earned;
+    earn(earned);                       // через earn, иначе пройдёт мимо статистики
     S.focus = FOCUS_MAX;
     start(S, earned);
   } else {
     showChoice(saved && (saved.legacy || saved.legacyTotal || saved.runs) ? saved : null);
   }
+}
+
+/* ---------- сверка с облаком ----------
+   Игра запускается сразу от локального сейва и не ждёт сети. Облако
+   подтягивается следом, и если там прогресс дальше — спрашиваем.
+   Молча подменять забег нельзя: человек мог только что играть здесь. */
+
+function whenAgo(ts){
+  const min = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (min < 1)   return 'только что';
+  if (min < 60)  return min + ' ' + plural(min, 'минуту', 'минуты', 'минут') + ' назад';
+  const h = Math.round(min / 60);
+  if (h < 24)    return h + ' ' + plural(h, 'час', 'часа', 'часов') + ' назад';
+  const d = Math.round(h / 24);
+  return d + ' ' + plural(d, 'день', 'дня', 'дней') + ' назад';
+}
+
+function describeSave(st){
+  if (!st) return 'пусто';
+  const p = PATHS.find(x => x.id === st.path);
+  const runs = st.runs || 0;
+  return [
+    runs + ' ' + plural(runs, 'перерождение', 'перерождения', 'перерождений'),
+    p ? p.name + ', ' + fmt(st.money || 0) + '$' : 'на выборе пути',
+    'влияние ' + (st.legacy || 0)
+  ].join(' · ');
+}
+
+async function syncWithCloud(){
+  if (!Store.hasRemote) return;
+  const cloud = await Store.pull();
+  const localTs = (S && S.ts) || 0;
+
+  // Облако пустое или отстало — значит здешний забег и есть свежий
+  if (!cloud || !cloud.ts || cloud.ts <= localTs + 5000){
+    save(); Store.pushNow();
+    return;
+  }
+
+  const go = await ask('Прогресс с другого устройства',
+    `<b>В облаке:</b> ${describeSave(cloud)}<br>обновлён ${whenAgo(cloud.ts)}<br><br>` +
+    `<b>Здесь:</b> ${describeSave(S)}<br>` +
+    `<br>Перейти к облачному? Здешний забег пропадёт.`,
+    'Перейти');
+
+  if (!go){ save(); Store.pushNow(); return; }   // остаёмся на своём и перебиваем облако
+  Store.save(cloud);
+  enter(cloud);
+}
+
+function boot(){
+  enter(Store.load());
   requestAnimationFrame(loop);
+  syncWithCloud();
 }
 
 setInterval(save, 5000);
-document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
-window.addEventListener('pagehide', save);
+document.addEventListener('visibilitychange', () => { if (document.hidden){ save(); Store.pushNow(); } });
+window.addEventListener('pagehide', () => { save(); Store.pushNow(); });
 
 $('reset').addEventListener('click', async () => {
   const ok = await ask('Стереть всё?',

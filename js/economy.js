@@ -50,7 +50,12 @@ function carryOf(src){
     stats: {
       taps:    src && src.stats ? (src.stats.taps    || 0) : 0,
       bonuses: src && src.stats ? (src.stats.bonuses || 0) : 0,
-      paths:   src && src.stats && src.stats.paths ? src.stats.paths.slice() : []
+      paths:   src && src.stats && src.stats.paths ? src.stats.paths.slice() : [],
+      // Пожизненные, через все перерождения. totalEarned обнуляется забегом,
+      // потому что на нём считаются очки влияния, а на этих двух потом
+      // построится рейтинг — им обнуляться нельзя.
+      earnedTotal: src && src.stats ? (src.stats.earnedTotal || 0) : 0,
+      spentTotal:  src && src.stats ? (src.stats.spentTotal  || 0) : 0
     }
   };
 }
@@ -152,7 +157,13 @@ function regenFocus(dt){
   S.focus = Math.min(FOCUS_MAX, S.focus + regen * dt);
 }
 
-function earn(amount){ S.money += amount; S.totalEarned += amount; }
+function earn(amount){
+  S.money += amount; S.totalEarned += amount;
+  S.stats.earnedTotal += amount;
+}
+// Всё, что ушло в развитие: апгрейды и перки. Траты по развилкам сюда не идут —
+// это не вложение, а решение по ситуации.
+function invest(amount){ S.stats.spentTotal += amount; }
 function spend(amount){ const c = Math.min(amount, S.money); S.money -= c; return c; }
 // Очки за текущий забег. Потраченное в магазине здесь ни при чём:
 // totalEarned обнуляется перерождением, так что двойной выдачи не будет.

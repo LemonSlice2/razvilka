@@ -11,6 +11,38 @@ const Store = (() => {
   const KEY = 'razvilka_save_v2', OLD = 'razvilka_save_v1';
   let memory = null, ok = true;
   try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); } catch(e){ ok = false; }
+
+  // Облако Telegram: привязано к аккаунту, поэтому ходит между устройствами.
+  // Локальное хранилище остаётся главным — оно синхронное и работает без сети.
+  // Облако только догоняет: сетевой вызов на каждое автосохранение раз в пять
+  // секунд был бы расточительством без всякой пользы.
+  const PUSH_EVERY = 25000;        // не чаще раза в 25 секунд
+  const REMOTE_TIMEOUT = 6000;     // столько ждём ответа, дальше играем от локального
+  const VALUE_LIMIT = 4096;        // жёсткий предел Telegram на длину значения
+  let remote = null, pending = null, pushTimer = null, lastPush = 0;
+
+  function push(json){
+    if (!remote) return;
+    // Молчаливая потеря сохранения хуже, чем его отсутствие: если перерастём
+    // предел, это должно быть видно в консоли, а не проявиться через месяц.
+    if (json.length > VALUE_LIMIT){
+      console.warn('сейв не влезает в облако Telegram:', json.length, 'из', VALUE_LIMIT);
+      return;
+    }
+    lastPush = Date.now();
+    try { remote.set(KEY, json); } catch(e){}
+  }
+
+  function schedulePush(json){
+    if (!remote) return;
+    pending = json;
+    if (pushTimer) return;
+    const wait = Math.max(0, PUSH_EVERY - (Date.now() - lastPush));
+    pushTimer = setTimeout(() => {
+      pushTimer = null;
+      if (pending){ push(pending); pending = null; }
+    }, wait);
+  }
   return {
     persistent: ok,
     load(){
@@ -31,8 +63,40 @@ const Store = (() => {
       const json = JSON.stringify(state);
       memory = JSON.parse(json);
       if (ok){ try { localStorage.setItem(KEY, json); } catch(e){} }
+      schedulePush(json);
     },
-    clear(){ memory = null; if (ok){ try { localStorage.removeItem(KEY); localStorage.removeItem(OLD); } catch(e){} } }
+    clear(){
+      memory = null;
+      if (ok){ try { localStorage.removeItem(KEY); localStorage.removeItem(OLD); } catch(e){} }
+      if (remote) try { remote.remove(KEY); } catch(e){}
+    },
+
+    /* ---------- облако ---------- */
+
+    // Ставится из telegram.js. Снаружи Telegram остаётся null, и вся облачная
+    // часть просто не включается.
+    useRemote(api){ remote = api; },
+    get hasRemote(){ return !!remote; },
+
+    // Читает сохранение из облака. Всегда завершается: если Telegram не ответил
+    // за REMOTE_TIMEOUT, отдаём null и играем от локального.
+    pull(){
+      if (!remote) return Promise.resolve(null);
+      return new Promise(resolve => {
+        let done = false;
+        const finish = v => { if (!done){ done = true; resolve(v); } };
+        setTimeout(() => finish(null), REMOTE_TIMEOUT);
+        try {
+          remote.get(KEY, (err, value) => {
+            if (err || !value) return finish(null);
+            try { finish(JSON.parse(value)); } catch(e){ finish(null); }
+          });
+        } catch(e){ finish(null); }
+      });
+    },
+
+    // Немедленная отправка: при уходе со страницы ждать нечего.
+    pushNow(){ if (pending){ push(pending); pending = null; } }
   };
 })();
 
