@@ -80,6 +80,17 @@ function boot(){
 }
 
 setInterval(save, 5000);
+
+/* Результат уходит в рейтинг фоном, а не только когда игрок открыл «Профиль».
+   Иначе в таблицу попадают не те, кто больше наиграл, а те, кто заглянул на
+   нужную вкладку. Внутри refresh() свой предохранитель — не чаще раза в минуту,
+   так что этот интервал ничего лишнего не шлёт. */
+setInterval(() => {
+  if (!S || !S.path) return;
+  Rating.refresh().then(changed => {
+    if (changed && activePane === 'profile') renderProfile();
+  });
+}, 30000);
 document.addEventListener('visibilitychange', () => { if (document.hidden){ save(); Store.pushNow(); } });
 window.addEventListener('pagehide', () => { save(); Store.pushNow(); });
 
