@@ -66,7 +66,9 @@
   .path .lock{color:var(--legacy);font-size:12.5px;margin-top:6px}
 
   /* шапка */
-  header{padding:13px 0 9px}
+  /* Липкая: развитие теперь внизу «Тапов», и при прокрутке к магазину
+     деньги с доходом должны оставаться на виду — иначе непонятно, на что хватает. */
+  header{padding:13px 0 9px;position:sticky;top:0;z-index:20;background:var(--bg)}
   .capital{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .capital .sum{font-size:34px;color:var(--money);letter-spacing:-1px;font-variant-numeric:tabular-nums}
   .capital .per{font-size:13.5px;color:var(--income);font-variant-numeric:tabular-nums}
@@ -160,6 +162,35 @@
 
   /* заголовок группы внутри развития */
   .shophead.sub{margin-top:22px}
+
+  /* ============================================================
+     ПРОФИЛЬ
+     ============================================================ */
+  #profile{padding-top:4px}
+  .pcard{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  .pemblem{
+    flex:0 0 auto;width:62px;height:62px;border-radius:50%;
+    border:2px solid var(--pc,var(--accent));background:var(--surface);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-serif);font-size:28px;color:var(--pc,var(--accent));
+  }
+  .pwho{min-width:0}
+  .pname{font-family:var(--font-serif);font-size:24px;font-weight:700;letter-spacing:-.3px}
+  .ptag{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
+
+  .pfacts{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:18px}
+  .pf{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .pf .v{font-size:17px;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+  .pf .k{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+  .rankrow{
+    display:flex;align-items:baseline;gap:11px;padding:11px 13px;background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:14px;
+  }
+  .rankrow.me{border-color:var(--legacy)}
+  .rankrow .place{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:18px}
+  .rankrow .who{flex:1;min-width:0}
+  .rankrow .score{color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
 
   /* ============================================================
      КАПИТАЛ — что уже нажито за забег

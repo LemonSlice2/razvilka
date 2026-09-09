@@ -260,11 +260,12 @@ let activePane = 'taps';
 
 function showPane(name){
   activePane = name;
-  for (const p of ['taps', 'shop', 'capital'])
+  for (const p of ['taps', 'profile', 'capital'])
     $('pane-' + p).classList.toggle('hidden', p !== name);
   document.querySelectorAll('#tabs .tab').forEach(t =>
     t.classList.toggle('is-on', t.dataset.pane === name));
   if (name === 'capital') renderCapital();
+  if (name === 'profile') renderProfile();
   window.scrollTo(0, 0);
   draw();
 }
@@ -353,6 +354,58 @@ function drawCapitalTotals(){
       ? 'Облако Telegram: отправлено ' + whenAgo(c.lastPush)
       : 'Облако Telegram: подключено, ещё не отправляли';
 }
+
+
+/* ============================================================
+   ПРОФИЛЬ — кто ты, а не что нажил.
+   Путь, черты освоенных путей, достижения, место в рейтинге.
+   Нажитое живёт на соседней вкладке и сюда не дублируется.
+   ============================================================ */
+function renderProfile(){
+  if (!S || !S.path) return;
+  const p = path();
+  const traits = (S.mastered || []).map(id => MASTERY[id]).filter(Boolean);
+  const done = S.achieved.length;
+
+  const facts = [
+    [S.runs, plural(S.runs, 'перерождение', 'перерождения', 'перерождений')],
+    ['×' + legacyMult().toFixed(2), 'влияние'],
+    [S.stats.paths.length + '/' + PATHS.length, 'путей пройдено'],
+    [done + '/' + ACHIEVEMENTS.length, 'достижений']
+  ];
+
+  $('profile').innerHTML =
+    `<div class="pcard">
+       <div class="pemblem" style="--pc:${p.color}">${p.name.charAt(0)}</div>
+       <div class="pwho">
+         <div class="pname">${p.name}</div>
+         <div class="ptag">${p.tagline}</div>
+       </div>
+     </div>
+     <div class="pfacts">` +
+       facts.map(([v, k]) => `<div class="pf"><div class="v">${v}</div><div class="k">${k}</div></div>`).join('') +
+     `</div>` +
+     (traits.length
+       ? `<div class="capgroup"><h3>Черты освоенных путей</h3>` + traits.map(t =>
+           `<div class="trait"><span class="m">✦</span>
+            <span><span>${t.name}</span><div class="d">${t.desc}</div></span></div>`).join('') + `</div>`
+       : '') +
+     `<div class="capgroup">
+        <h3>Рейтинг</h3>
+        <div class="rankrow me">
+          <span class="place">—</span>
+          <span class="who">Ты · ${p.name}</span>
+          <span class="score">${fmt(S.stats.earnedTotal)}$</span>
+        </div>
+        <div class="capnote">${RANK_NOTE}</div>
+      </div>`;
+}
+
+// Пока в игре один участник — ты. Общий рейтинг требует общего хранилища,
+// а облако Telegram приватное: оно видит только твои данные и ничьи больше.
+const RANK_NOTE =
+  'Считается по заработанному за всё время. Общий рейтинг появится, когда у игры ' +
+  'будет общее хранилище — облако Telegram приватное и чужих результатов не видит.';
 
 /* ---------- перерождение ---------- */
 async function doRebirth(){
