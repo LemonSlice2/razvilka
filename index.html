@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Развилка</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <section id="choose">
+    <div id="meta" class="hidden">
+      <div class="head">
+        <h2 class="serif">Палата влияния</h2>
+        <span class="bal" id="metaBal"></span>
+      </div>
+      <div id="metalist"></div>
+      <div id="mastery" class="hidden">
+        <h2>Освоенные пути</h2>
+        <div id="masterylist"></div>
+      </div>
+    </div>
+    <h1 id="chooseTitle">С чего начнёшь?</h1>
+    <p class="lead" id="chooseLead">Путь определяет, что приносит деньги. Дойдёшь до потолка — сможешь начать заново другим путём и сохранить накопленное влияние.</p>
+    <div id="pathlist"></div>
+  </section>
+
+  <section id="game" class="hidden">
+    <header>
+      <div class="capital">
+        <span class="sum" id="money">0</span>
+        <span class="per" id="income"></span>
+      </div>
+      <div class="toprow">
+        <div class="pathline" id="pathline"></div>
+        <button id="sound">Звук</button>
+      </div>
+      <div id="buffline"></div>
+      <div class="legacybar" id="legacybar">
+        <div class="bar"><div class="fill" id="legacyfill"></div></div>
+        <div class="cap"><span id="legacycap"></span><span id="legacynext"></span></div>
+      </div>
+      <div class="focus">
+        <div class="bar"><div class="fill" id="focusfill"></div></div>
+        <div class="cap"><span>Концентрация</span><span id="focusnote">полная отдача</span></div>
+      </div>
+    </header>
+
+    <div id="welcome" class="hidden"></div>
+
+    <div id="tapzone">
+      <button id="tap"><span id="taplabel">Работать</span><span class="val" id="tapval"></span></button>
+    </div>
+
+    <button id="eventcard" class="hidden">
+      <div class="t">
+        <div class="h">Развилка</div>
+        <div class="s" id="eventHint"></div>
+      </div>
+      <div class="go">Разобраться</div>
+    </button>
+
+    <button id="ability" class="hidden">
+      <div class="cd" id="abilityCd"></div>
+      <div class="inner">
+        <div class="t">
+          <div class="h" id="abilityName"></div>
+          <div class="s" id="abilityDesc"></div>
+        </div>
+        <div class="when" id="abilityWhen"></div>
+      </div>
+    </button>
+
+    <button id="rebirth" class="hidden">
+      <div class="t">
+        <div class="h">Начать сначала</div>
+        <div class="s" id="rebirthSub"></div>
+      </div>
+      <div class="pts" id="rebirthPts"></div>
+    </button>
+
+    <div id="shop">
+      <div class="shophead">
+        <h2>Развитие</h2>
+        <button id="bulk">×1</button>
+      </div>
+      <div id="uplist"></div>
+      <div id="perks">
+        <div class="shophead"><h2 id="perkshead">Особое</h2></div>
+        <div id="perklist"></div>
+      </div>
+      <button id="achbtn"></button>
+      <div id="achlist"></div>
+    </div>
+
+    <footer><button id="reset">Стереть всё</button></footer>
+  </section>
+  <div id="modal" class="hidden">
+    <div class="card">
+      <h2 id="modalTitle" class="serif"></h2>
+      <div class="txt" id="modalText"></div>
+      <div class="row">
+        <button id="modalNo">Отмена</button>
+        <button id="modalYes" class="go">Продолжить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Порядок важен: обычные скрипты, общая область видимости. -->
+<script src="js/content.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/systems.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/boot.js"></script>
+</body>
+</html>

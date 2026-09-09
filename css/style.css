@@ -1,0 +1,237 @@
+  :root{
+    --bg:#14100E;
+    --surface:#1F1916;
+    --surface-2:#2A221D;
+    --line:#3A2F27;
+    --text:#EDE4DA;
+    --muted:#9A8A7C;
+    --money:#E0A33E;
+    --income:#8FA96C;
+    --legacy:#9B7BB8;
+    --accent:#B4553F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
+    touch-action:manipulation;overscroll-behavior:none;display:flex;justify-content:center;
+  }
+  #app{width:100%;max-width:460px;min-height:100%;display:flex;flex-direction:column;
+       padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
+  h1,h2,.serif{font-family:"Iowan Old Style",Georgia,"Times New Roman",serif;font-weight:600}
+
+  /* выбор пути */
+  #choose{display:flex;flex-direction:column;justify-content:center;flex:1;gap:12px;padding:28px 0}
+  #choose h1{font-size:32px;line-height:1.12;letter-spacing:-.4px}
+  #choose .lead{color:var(--muted);font-size:14.5px;line-height:1.5;margin-bottom:8px}
+  .path{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--pc,var(--accent));
+        border-radius:10px;padding:15px;text-align:left;color:inherit;font:inherit;cursor:pointer;width:100%}
+  .path:active{background:var(--surface-2)}
+  .path:disabled{opacity:.4;cursor:default;border-left-color:var(--line)}
+  .path .name{font-size:18px;font-family:"Iowan Old Style",Georgia,serif}
+  .path .tag{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.45}
+  .path .lock{color:var(--legacy);font-size:12.5px;margin-top:6px}
+
+  /* шапка */
+  header{padding:13px 0 9px}
+  .capital{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .capital .sum{font-size:34px;color:var(--money);letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .capital .per{font-size:13.5px;color:var(--income);font-variant-numeric:tabular-nums}
+  .pathline{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .pathline b{color:var(--legacy);font-weight:500}
+  .focus{margin-top:11px}
+  .focus .bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+  .focus .fill{height:100%;background:var(--accent);width:100%;transition:width .12s linear}
+  .focus .cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:5px}
+
+  /* тап */
+  #tapzone{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px;position:relative}
+  #tap{width:172px;height:172px;border-radius:50%;border:1px solid var(--line);
+       background:radial-gradient(circle at 38% 32%, var(--surface-2), var(--surface) 70%);
+       color:var(--text);font-family:"Iowan Old Style",Georgia,serif;font-size:19px;cursor:pointer;
+       box-shadow:0 0 0 8px rgba(0,0,0,.18)}
+  #tap.hit{transform:scale(.96)}
+  #tap .val{display:block;font-size:13px;color:var(--muted);margin-top:6px;
+            font-family:system-ui,sans-serif;font-variant-numeric:tabular-nums}
+  .float{position:absolute;pointer-events:none;color:var(--money);font-size:17px;
+         font-variant-numeric:tabular-nums;animation:rise .7s ease-out forwards}
+  .float.crit{color:#FF9B6B;font-size:22px;font-weight:600}
+  @keyframes rise{to{transform:translateY(-46px);opacity:0}}
+
+  /* перерождение */
+  #rebirth{width:100%;background:var(--surface);border:1px solid var(--legacy);border-radius:10px;
+           padding:13px 14px;margin:2px 0 14px;color:inherit;font:inherit;text-align:left;cursor:pointer;
+           display:flex;align-items:center;gap:12px}
+  #rebirth:active{background:var(--surface-2)}
+  #rebirth .t{flex:1}
+  #rebirth .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  #rebirth .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  #rebirth .pts{color:var(--legacy);font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  /* апгрейды */
+  #shop{flex:1;padding-bottom:18px}
+  #shop h2{font-size:13.5px;color:var(--muted);font-weight:500;margin:4px 0 9px;font-family:system-ui,sans-serif}
+  .up{width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);
+      border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;
+      text-align:left;color:inherit;font:inherit;cursor:pointer}
+  .up:disabled{opacity:.42;cursor:default}
+  .up:not(:disabled):active{background:var(--surface-2)}
+  .up .body{flex:1;min-width:0}
+  .up .n{font-size:15px}
+  .up .n em{font-style:normal;color:var(--muted);font-size:12.5px}
+  .up .d{font-size:12.5px;color:var(--income);margin-top:2px}
+  .up .cost{font-size:14.5px;color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  #welcome{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+           padding:12px 14px;margin:8px 0;font-size:13.5px;line-height:1.45;color:var(--muted)}
+  #welcome b{color:var(--money);font-weight:600}
+  footer{padding:4px 0 16px;text-align:center}
+  #reset{background:none;border:none;color:var(--muted);font:inherit;font-size:12.5px;opacity:.55;cursor:pointer;padding:8px}
+  /* палата влияния */
+  #meta{margin-bottom:18px}
+  #meta .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px}
+  #meta .head h2{font-size:19px}
+  #meta .bal{font-size:15px;color:var(--legacy);font-variant-numeric:tabular-nums}
+  .mrow{width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);
+        border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:7px;
+        text-align:left;color:inherit;font:inherit;cursor:pointer}
+  .mrow:disabled{opacity:.45;cursor:default}
+  .mrow:not(:disabled):active{background:var(--surface-2)}
+  .mrow.has{border-color:var(--legacy)}
+  .mrow .body{flex:1;min-width:0}
+  .mrow .n{font-size:14.5px}
+  .mrow .n em{font-style:normal;color:var(--legacy);font-size:12.5px}
+  .mrow .d{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.35}
+  .mrow .price{font-size:14.5px;color:var(--legacy);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .mrow .price.no{color:var(--muted)}
+
+  /* развилка */
+  #eventcard{width:100%;background:var(--surface);border:1px solid var(--money);border-radius:11px;
+             padding:13px 15px;margin:2px 0 12px;color:inherit;font:inherit;text-align:left;cursor:pointer;
+             display:flex;align-items:center;gap:12px;animation:pop .3s ease-out}
+  #eventcard:active{background:var(--surface-2)}
+  #eventcard .t{flex:1}
+  #eventcard .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif;color:var(--money)}
+  #eventcard .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  #eventcard .go{font-size:13px;color:var(--money);white-space:nowrap}
+  #modal .row.two button{flex:1}
+  #modal .row.two button.go{background:var(--money);border-color:var(--money);color:#241804}
+
+  /* освоенные пути */
+  #mastery{margin-bottom:16px}
+  #mastery h2{font-size:13.5px;color:var(--muted);font-weight:500;margin-bottom:8px;
+              font-family:system-ui,sans-serif}
+  .trait{display:flex;gap:10px;align-items:baseline;background:var(--surface);
+         border:1px solid var(--income);border-radius:9px;padding:9px 12px;margin-bottom:6px;font-size:13.5px}
+  .trait .m{color:var(--income);flex:0 0 auto}
+  .trait .d{color:var(--muted);font-size:12px;margin-top:2px;line-height:1.35}
+  .path .done{color:var(--income);font-size:12px;margin-top:6px}
+
+  /* особая способность пути */
+  #ability{width:100%;margin:2px 0 12px;background:var(--surface);border:1px solid var(--accent);
+           border-radius:11px;padding:0;overflow:hidden;position:relative;cursor:pointer;
+           color:inherit;font:inherit;text-align:left}
+  #ability .inner{position:relative;z-index:2;padding:12px 14px;display:flex;align-items:center;gap:12px}
+  #ability .t{flex:1;min-width:0}
+  #ability .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  #ability .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
+  #ability .when{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  #ability .cd{position:absolute;inset:0 auto 0 0;background:var(--surface-2);width:0%;z-index:1}
+  #ability.ready{border-color:var(--accent)}
+  #ability.ready .when{color:var(--accent)}
+  #ability.cooling{border-color:var(--line)}
+  #ability:active .inner{opacity:.8}
+
+  /* прогресс до следующего очка влияния */
+  .legacybar{margin-top:10px}
+  .legacybar .bar{height:3px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+  .legacybar .fill{height:100%;background:var(--legacy);width:0%;transition:width .3s ease}
+  .legacybar .cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:5px}
+  .legacybar .cap b{color:var(--legacy);font-weight:500}
+
+  /* режим покупки */
+  .shophead{display:flex;align-items:center;justify-content:space-between;margin:4px 0 9px}
+  .shophead h2{margin:0}
+  #bulk{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--text);
+        font:inherit;font-size:12.5px;padding:5px 11px;cursor:pointer;font-variant-numeric:tabular-nums}
+  .up .cnt2{font-size:12px;color:var(--muted)}
+
+  /* уникальные апгрейды */
+  #perks{margin-top:16px}
+  .perk{width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);
+        border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:8px;
+        text-align:left;color:inherit;font:inherit;cursor:pointer}
+  .perk:disabled{cursor:default}
+  .perk.locked{opacity:.4;border-color:var(--line)}
+  .perk.bought{border-color:var(--income);opacity:1}
+  .perk:not(:disabled):active{background:var(--surface-2)}
+  .perk .body{flex:1;min-width:0}
+  .perk .n{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  .perk .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+  .perk .cost{font-size:14.5px;color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .perk.bought .cost{color:var(--income);font-size:13px}
+
+  /* достижения */
+  #achbtn{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);
+          font:inherit;font-size:12.5px;padding:9px 12px;cursor:pointer;width:100%;margin-bottom:10px}
+  #achbtn b{color:var(--legacy);font-weight:500}
+  #achlist{display:none;margin-bottom:14px}
+  #achlist.open{display:block}
+  .ach{display:flex;gap:11px;align-items:baseline;padding:9px 12px;border:1px solid var(--line);
+       border-radius:9px;margin-bottom:6px;background:var(--surface);font-size:13.5px}
+  .ach.done{border-color:var(--legacy)}
+  .ach .mark{color:var(--legacy);width:14px;flex:0 0 14px}
+  .ach.locked{opacity:.45}
+  .ach .d{color:var(--muted);font-size:12px;margin-top:2px}
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:60;
+         background:var(--surface);border:1px solid var(--legacy);border-radius:11px;
+         padding:11px 16px;max-width:330px;box-shadow:0 8px 30px rgba(0,0,0,.5);
+         animation:toastin .35s ease-out}
+  #toast .h{font-size:12px;color:var(--legacy)}
+  #toast .n{font-size:15px;font-family:"Iowan Old Style",Georgia,serif;margin-top:2px}
+  @keyframes toastin{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
+
+  /* активные бонусы и звук */
+  .toprow{display:flex;align-items:center;gap:8px;justify-content:space-between}
+  #sound{background:none;border:1px solid var(--line);border-radius:8px;color:var(--muted);
+         font:inherit;font-size:12px;padding:5px 9px;cursor:pointer;white-space:nowrap}
+  #sound.on{color:var(--text);border-color:var(--muted)}
+  #buffline{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;min-height:0}
+  .buff{background:var(--surface-2);border:1px solid var(--money);border-radius:7px;
+        padding:4px 9px;font-size:12px;color:var(--money);font-variant-numeric:tabular-nums}
+
+  /* всплывающий бонус */
+  .bonus{position:fixed;width:64px;height:64px;border-radius:50%;border:none;padding:0;cursor:pointer;
+         background:radial-gradient(circle at 36% 30%, #FFD98A, var(--money) 62%, #A9701F);
+         box-shadow:0 6px 22px rgba(224,163,62,.4);z-index:40;
+         display:flex;align-items:center;justify-content:center;
+         font-family:"Iowan Old Style",Georgia,serif;font-size:26px;color:#3A2607;
+         animation:pop .35s cubic-bezier(.2,1.4,.4,1), pulse 1.6s ease-in-out .35s infinite}
+  .bonus.leaving{animation:fade .3s ease-in forwards}
+  @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+  @keyframes fade{to{transform:scale(.6);opacity:0}}
+  .grab{position:fixed;pointer-events:none;z-index:41;color:var(--money);
+        font-family:"Iowan Old Style",Georgia,serif;font-size:20px;
+        animation:rise 1s ease-out forwards}
+
+  /* собственное окно подтверждения: системный confirm() блокируется в песочнице */
+  #modal{position:fixed;inset:0;background:rgba(10,7,5,.72);display:flex;align-items:center;
+         justify-content:center;padding:22px;z-index:50}
+  #modal .card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);
+               border-radius:14px;padding:20px}
+  #modal h2{font-size:22px;margin-bottom:10px;letter-spacing:-.2px}
+  #modal .txt{font-size:14px;line-height:1.55;color:var(--muted)}
+  #modal .txt b{color:var(--legacy);font-weight:600}
+  #modal .row{display:flex;gap:9px;margin-top:18px}
+  #modal button{flex:1;padding:12px;border-radius:9px;font:inherit;font-size:14.5px;cursor:pointer;
+                border:1px solid var(--line);background:var(--surface-2);color:var(--text)}
+  #modal button.go{background:var(--legacy);border-color:var(--legacy);color:#17110D;font-weight:600}
+  #modal button:active{opacity:.82}
+  .hidden{display:none !important}
+  @media (prefers-reduced-motion:reduce){
+    .float,.grab{animation-duration:.01ms}
+    .bonus{animation:pop .01ms}
+  }
