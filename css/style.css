@@ -114,7 +114,8 @@
   .up .body{flex:1;min-width:0}
   .up .n{font-size:15px}
   .up .n em{font-style:normal;color:var(--muted);font-size:12.5px}
-  .up .d{font-size:12.5px;color:var(--income);margin-top:2px}
+  .up .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .up .d b{color:var(--income);font-weight:600}
   .up .cost{font-size:14.5px;color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
 
   #welcome{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
@@ -184,6 +185,22 @@
   .gearcell .gp{font-size:11.5px;color:var(--money);font-variant-numeric:tabular-nums}
   .gearcell:disabled .gp{color:var(--muted)}
   .gearnote{margin-bottom:16px}
+  .gearcell.busy{border-color:var(--legacy)}
+  .gearcell.busy .gp{color:var(--legacy)}
+  .gearcell:disabled.busy{opacity:1}          /* идёт улучшение — не бледнить */
+
+  /* магазин */
+  #shopbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+           color:var(--muted);font:inherit;font-size:13.5px;padding:11px 12px;
+           cursor:pointer;width:100%;margin-bottom:10px}
+  #shopbtn b{color:var(--legacy);font-weight:600}
+  #shopbtn:active{background:var(--surface-2)}
+  #shoppanel{display:none;margin-bottom:14px}
+  #shoppanel.open{display:block}
+  .shoptabs{display:flex;gap:7px;margin-bottom:9px}
+  .shoptab{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;
+           color:var(--muted);font:inherit;font-size:12.5px;padding:6px 12px;cursor:pointer}
+  .shoptab.is-on{color:var(--text);border-color:var(--legacy)}
   .pcard{display:flex;align-items:center;gap:14px;margin-bottom:16px}
   .pemblem{
     flex:0 0 auto;width:62px;height:62px;border-radius:50%;

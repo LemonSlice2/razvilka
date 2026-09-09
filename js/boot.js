@@ -21,6 +21,7 @@ function enter(saved){
     const earned = perSecond() * elapsed;
     earn(earned);                       // через earn, иначе пройдёт мимо статистики
     S.focus = FOCUS_MAX;
+    tickUpgrade();          // таймер шёл, пока игра была закрыта
     start(S, earned);
   } else {
     showChoice(saved && (saved.legacy || saved.legacyTotal || saved.runs) ? saved : null);

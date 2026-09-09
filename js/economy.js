@@ -47,8 +47,11 @@ function carryOf(src){
     meta:     src && src.meta ? { ...src.meta } : {},
     mastered: src && src.mastered ? src.mastered.slice() : [],
     achieved: src && src.achieved ? src.achieved.slice() : [],
-    // Вещи переживают перерождение: это имущество персонажа, а не забега
+    // Вещи, кристаллы и начатое улучшение переживают перерождение:
+    // это имущество персонажа, а не забега
     gear: src && src.gear ? { ...src.gear } : {},
+    crystals: src && src.crystals !== undefined ? src.crystals : 0,
+    upgrade: src && src.upgrade ? { ...src.upgrade } : null,
     stats: {
       taps:    src && src.stats ? (src.stats.taps    || 0) : 0,
       bonuses: src && src.stats ? (src.stats.bonuses || 0) : 0,
@@ -176,6 +179,50 @@ function combatRating(){
   return Math.round(powerOf() * Math.sqrt(healthOf() / 100) * 10) / 10;
 }
 
+/* ---------- кристаллы и улучшение вещей ----------
+   Улучшение идёт по часам, а не по нажатию: одно за раз, и время растёт
+   с уровнем. Считается по меткам времени, поэтому идёт и когда игра закрыта. */
+
+function crystalPrice(n){ return n * CRYSTAL_PRICE; }
+
+function buyCrystals(n){
+  const price = crystalPrice(n);
+  if (n < 1 || S.legacy < price) return false;
+  S.legacy -= price;
+  S.crystals += n;
+  return true;
+}
+
+function upgradeLeft(){
+  if (!S || !S.upgrade) return 0;
+  return Math.max(0, (S.upgrade.until - Date.now()) / 1000);
+}
+
+/* Завершает улучшение, если время вышло. Зовётся и в цикле, и при запуске —
+   поэтому таймер честно идёт, пока игра закрыта. */
+function tickUpgrade(){
+  if (!S || !S.upgrade) return false;
+  if (Date.now() < S.upgrade.until) return false;
+  S.gear[S.upgrade.id] = S.upgrade.to;
+  S.upgrade = null;
+  return true;
+}
+
+function canUpgrade(id){
+  if (!S || S.upgrade) return false;                 // одно улучшение за раз
+  const lvl = gearLevel(id);
+  if (lvl >= GEAR_MAX) return false;
+  return S.crystals >= crystalsFor(lvl + 1);
+}
+
+function startUpgrade(id){
+  if (!canUpgrade(id)) return false;
+  const lvl = gearLevel(id);
+  S.crystals -= crystalsFor(lvl + 1);
+  S.upgrade = { id, to: lvl + 1, until: Date.now() + secondsFor(lvl + 1) * 1000 };
+  return true;
+}
+
 function earn(amount){
   S.money += amount; S.totalEarned += amount;
   S.stats.earnedTotal += amount;
@@ -198,6 +245,16 @@ function fmt(n){
   while (n >= 1000 && i < UNITS.length - 1){ n /= 1000; i++; }
   return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + UNITS[i];
 }
+// Сколько осталось, словами. Для таймера улучшения.
+function dur(sec){
+  sec = Math.max(0, Math.ceil(sec));
+  if (sec < 60) return sec + 'с';
+  const m = Math.floor(sec / 60), s2 = sec % 60;
+  if (m < 60) return m + 'м ' + s2 + 'с';
+  const h = Math.floor(m / 60);
+  return h + 'ч ' + (m % 60) + 'м';
+}
+
 // Насколько давно это было, словами. Живёт рядом с fmt и plural,
 // потому что зовут его и из ui.js, и из boot.js.
 function whenAgo(ts){

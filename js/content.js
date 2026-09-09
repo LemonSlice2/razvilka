@@ -234,16 +234,31 @@ const PATHS = PATH_DEFS.map(def => ({
    докачать всё до предела — работа на много забегов, а не на один вечер.
    ============================================================ */
 const GEAR = [
-  { id:'nozh',      name:'Нож',       desc:'Разговор становится короче',  power:9, health:0,  cost:40000,     growth:2.6, max:10 },
-  { id:'kurtka',    name:'Куртка',    desc:'Держит удар',                 power:0, health:30, cost:90000,     growth:2.6, max:10 },
-  { id:'perchatki', name:'Перчатки',  desc:'Руки целее',                  power:4, health:9,  cost:240000,    growth:2.6, max:10 },
-  { id:'botinki',   name:'Ботинки',   desc:'Уйти успеешь',                power:2, health:16, cost:700000,    growth:2.6, max:10 },
-  { id:'chasy',     name:'Часы',      desc:'Знаешь, когда пора',          power:6, health:6,  cost:2200000,   growth:2.7, max:10 },
-  { id:'pechatka',  name:'Печатка',   desc:'Тебя узнают без слов',        power:8, health:8,  cost:7000000,   growth:2.7, max:10 }
+  { id:'nozh',      name:'Нож',      desc:'Разговор становится короче', power:9, health:0  },
+  { id:'kurtka',    name:'Куртка',   desc:'Держит удар',                power:0, health:30 },
+  { id:'perchatki', name:'Перчатки', desc:'Руки целее',                 power:4, health:9  },
+  { id:'botinki',   name:'Ботинки',  desc:'Уйти успеешь',               power:2, health:16 },
+  { id:'chasy',     name:'Часы',     desc:'Знаешь, когда пора',         power:6, health:6  },
+  { id:'pechatka',  name:'Печатка',  desc:'Тебя узнают без слов',       power:8, health:8  }
 ];
 
+const GEAR_MAX = 30;
+
+/* Кристаллы улучшения. Покупаются за влияние, тратятся на уровни вещей.
+   Влияние нужно и палате, поэтому кристалл — это всегда выбор, а не рутина. */
+const CRYSTAL_PRICE = 3;     // влияния за один кристалл
+
+/* Сколько кристаллов стоит переход с уровня l на l+1 */
+function crystalsFor(l){ return Math.ceil(Math.pow(1.20, l - 1)); }
+
+/* Сколько секунд идёт этот переход.
+   Пара чисел, ради которых всё считалось: 1-й уровень минута, 30-й восемь
+   с половиной часов. Даже с бесконечным влиянием все шесть вещей до предела
+   не выйдут быстрее одиннадцати суток чистого времени — прокачать всё за
+   вечер невозможно физически, а не потому что дорого. */
+function secondsFor(l){ return Math.round(60 * Math.pow(1.24, l - 1)); }
+
 function gearLevel(id){ return (S && S.gear && S.gear[id]) || 0; }
-function gearCost(g){ return Math.floor(g.cost * Math.pow(g.growth, gearLevel(g.id))); }
 
 /* ============================================================
    2c-bis. НАСЛЕДИЕ ПУТЕЙ

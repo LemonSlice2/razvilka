@@ -150,6 +150,15 @@ function start(state, offlineEarned){
   scheduleEvent(true);
 }
 
+/* Что апгрейд делает, числом. Люди жаловались, что «Бегает вместо тебя»
+   не объясняет ничего: непонятно, доход это или тап и на сколько.
+   Считается из тех же данных, что и сам эффект, поэтому разойтись не может. */
+function effectText(u){
+  if (u.type === 'income') return '+' + fmt(u.value) + '$/сек';
+  if (u.type === 'mult')   return '×' + u.value + ' к тапу';
+  return '+' + fmt(u.value) + ' к тапу';
+}
+
 let shopBuilt = false;
 function buildShop(){
   const tapList = $('uplist-tap'), incList = $('uplist-income');
@@ -160,7 +169,7 @@ function buildShop(){
     b.dataset.id = u.id;
     b.innerHTML = `<div class="body">
         <div class="n">${u.name} <em class="cnt"></em></div>
-        <div class="d">${u.desc} <span class="cnt2"></span></div>
+        <div class="d"><b>${effectText(u)}</b> · ${u.desc} <span class="cnt2"></span></div>
       </div><div class="cost"></div>`;
     b.addEventListener('click', () => buy(u));
     // множитель усиливает силу тапа, поэтому лежит вместе с тапом, а не отдельно
@@ -378,17 +387,23 @@ function renderProfile(){
 
   $('profile').innerHTML =
     `<div class="gearstrip">` + GEAR.map(g => {
-      const lvl = gearLevel(g.id), maxed = lvl >= g.max;
-      const price = gearCost(g);
-      const can = !maxed && S.money >= price;
-      return `<button class="gearcell${lvl ? ' has' : ''}${can ? ' can' : ''}"
-                      data-gear="${g.id}" ${maxed || !can ? 'disabled' : ''}>
-          <div class="lvl">${lvl ? 'ур. ' + lvl : '—'}</div>
+      const lvl = gearLevel(g.id), maxed = lvl >= GEAR_MAX;
+      const busy = S.upgrade && S.upgrade.id === g.id;
+      const need = maxed ? 0 : crystalsFor(lvl + 1);
+      const can = canUpgrade(g.id);
+      const bottom = maxed ? 'предел'
+                   : busy  ? dur(upgradeLeft())
+                   : need + ' ✦';
+      return `<button class="gearcell${lvl ? ' has' : ''}${can ? ' can' : ''}${busy ? ' busy' : ''}"
+                      data-gear="${g.id}" ${can ? '' : 'disabled'}>
+          <div class="lvl">${lvl ? 'ур. ' + lvl + '/' + GEAR_MAX : '—'}</div>
           <div class="gn">${g.name}</div>
-          <div class="gp">${maxed ? 'предел' : fmt(price) + '$'}</div>
+          <div class="gp">${bottom}</div>
         </button>`;
     }).join('') + `</div>
-     <div class="capnote gearnote">${gearHint()}</div>` +
+     <div class="capnote gearnote">${gearHint()}</div>
+     <button id="shopbtn"></button>
+     <div id="shoppanel"></div>` +
     `<div class="pcard">
        <div class="pemblem" style="--pc:${p.color}">${p.name.charAt(0)}</div>
        <div class="pwho">
@@ -409,37 +424,90 @@ function renderProfile(){
   // Обновление асинхронное: рисуем что есть, а когда придёт свежее —
   // перерисовываем ещё раз. refresh() отдаёт false, если ничего не менялось,
   // поэтому в петлю это не сваливается.
+  // панель могла быть открыта до перерисовки — состояние переживает её
+  if (shopOpen) $('shoppanel').classList.add('open');
+  renderShop();
+  $('shopbtn').addEventListener('click', () => {
+    shopOpen = !shopOpen;
+    $('shoppanel').classList.toggle('open', shopOpen);
+    renderShop();
+  });
   document.querySelectorAll('#profile .gearcell').forEach(b =>
-    b.addEventListener('click', () => buyGear(b.dataset.gear)));
+    b.addEventListener('click', () => tapGear(b.dataset.gear)));
 
   Rating.refresh().then(changed => {
     if (changed && activePane === 'profile') renderProfile();
   });
 }
 
-/* Подсказка под полосой вещей: что вообще происходит и зачем это нужно.
-   Без неё непонятно, почему сила ничего не даёт к доходу. */
+/* Подсказка под полосой вещей: что происходит прямо сейчас.
+   Без неё непонятно ни почему кнопки серые, ни сколько ждать. */
 function gearHint(){
-  const next = GEAR.filter(g => gearLevel(g.id) < g.max)
-                   .sort((a, b) => gearCost(a) - gearCost(b))[0];
-  if (!next) return 'Все вещи докачаны до предела.';
-  if (!powerOf()) return 'Вещи остаются с тобой после перерождения. На доход не влияют — они для драки с другими игроками.';
-  return 'Ближайшая покупка: ' + next.name + ' за ' + fmt(gearCost(next)) + '$.';
+  if (S.upgrade){
+    const g = GEAR.find(x => x.id === S.upgrade.id);
+    return `${g.name} улучшается до ${S.upgrade.to} уровня · осталось ${dur(upgradeLeft())}. ` +
+           'Одновременно идёт одно улучшение.';
+  }
+  const cheapest = GEAR.filter(g => gearLevel(g.id) < GEAR_MAX)
+    .map(g => crystalsFor(gearLevel(g.id) + 1)).sort((a, b) => a - b)[0];
+  if (cheapest === undefined) return 'Все вещи докачаны до предела.';
+  if (S.crystals < cheapest)
+    return `Кристаллов: ${S.crystals}. На ближайшее улучшение нужно ${cheapest} — купи в магазине за влияние.`;
+  return `Кристаллов: ${S.crystals}. Жми на вещь, чтобы начать улучшение.`;
 }
 
-function buyGear(id){
-  const g = GEAR.find(x => x.id === id);
-  if (!g) return;
-  const lvl = gearLevel(id);
-  const price = gearCost(g);
-  if (lvl >= g.max || S.money < price) return;
-  S.money -= price;
-  invest(price);
-  S.gear[id] = lvl + 1;
+/* Отсчёт обновляется точечно: перерисовывать весь профиль каждый кадр
+   ради двух строк — расточительство, да и клики бы срывались. */
+function drawGearTimer(){
+  const cell = document.querySelector(`#profile .gearcell[data-gear="${S.upgrade.id}"] .gp`);
+  if (cell) cell.textContent = dur(upgradeLeft());
+  const hint = $('profile').querySelector('.gearnote');
+  if (hint) hint.textContent = gearHint();
+}
+
+function tapGear(id){
+  if (!startUpgrade(id)) return;
   Sound.buy(); haptic(16);
-  checkAchievements();
   renderProfile(); draw(); save();
 }
+
+/* ============================================================
+   МАГАЗИН
+   Пока одна вкладка. Вкладки заведены сразу, потому что туда
+   лягут другие расходники, и переделывать разметку не придётся.
+   ============================================================ */
+const SHOP_PACKS = [1, 5, 25];
+let shopOpen = false;
+
+function renderShop(){
+  const open = $('shoppanel').classList.contains('open');
+  $('shopbtn').innerHTML = `Магазин · кристаллов <b>${S.crystals}</b>`;
+  if (!open) return;
+
+  $('shoppanel').innerHTML =
+    `<div class="shoptabs"><button class="shoptab is-on">Расходники</button></div>
+     <div class="capnote">Кристалл улучшения — ${CRYSTAL_PRICE} влияния. У тебя ${S.legacy} ${plural(S.legacy,'очко','очка','очков')}.</div>` +
+    SHOP_PACKS.map(n => {
+      const price = crystalPrice(n);
+      const can = S.legacy >= price;
+      return `<button class="mrow" data-crystals="${n}" ${can ? '' : 'disabled'}>
+          <div class="body">
+            <div class="n">${n} ${plural(n,'кристалл','кристалла','кристаллов')} ✦</div>
+            <div class="d">Тратятся на уровни вещей</div>
+          </div>
+          <div class="price ${can ? '' : 'no'}">${price}</div>
+        </button>`;
+    }).join('');
+
+  document.querySelectorAll('#shoppanel [data-crystals]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (!buyCrystals(Number(b.dataset.crystals))) return;
+      Sound.buy(); haptic(16);
+      renderProfile(); renderShop(); draw(); save();
+    }));
+}
+
+
 
 const RANK_NOTE = {
   'not-configured': 'Общий рейтинг ещё не подключён — пока здесь только твой результат.',
@@ -704,6 +772,11 @@ function loop(now){
     const autoTaps = (perk('avtomat') ? 3 : 0) + (mastered('science') ? 1 : 0);
     if (autoTaps) earn(perTap() * focusMult() * autoTaps * dt);
     regenFocus(dt);
+    // улучшение вещи могло доехать прямо сейчас
+    if (tickUpgrade()){
+      Sound.buy(); haptic([16, 50, 24]);
+      if (activePane === 'profile') renderProfile();
+    }
     draw();
   }
   requestAnimationFrame(loop);
@@ -782,6 +855,7 @@ function draw(){
   }
 
   if (activePane === 'capital') drawCapitalTotals();
+  if (activePane === 'profile' && S.upgrade) drawGearTimer();
 
   // точка на вкладке «Тапы»: развилка ждёт или способность готова,
   // а игрок сейчас смотрит в другое место
