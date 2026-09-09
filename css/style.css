@@ -102,8 +102,8 @@
   #rebirth .pts{color:var(--legacy);font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   /* апгрейды */
-  #shop{flex:1;padding-bottom:18px}
-  #shop h2{font-size:13.5px;color:var(--muted);font-weight:500;margin:4px 0 9px;font-family:var(--font-ui)}
+  .pane{flex:1;padding-bottom:18px}
+  .pane h2{font-size:13.5px;color:var(--muted);font-weight:500;margin:4px 0 9px;font-family:var(--font-ui)}
   .up{width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);
       border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;
       text-align:left;color:inherit;font:inherit;cursor:pointer}
@@ -120,6 +120,78 @@
   #welcome b{color:var(--money);font-weight:600}
   footer{padding:4px 0 16px;text-align:center}
   #reset{background:none;border:none;color:var(--muted);font:inherit;font-size:12.5px;opacity:.55;cursor:pointer;padding:8px}
+
+  /* ============================================================
+     НИЖНЕЕ МЕНЮ
+     Три вкладки вместо одного длинного экрана: развитие отдельно,
+     тап отдельно, нажитое отдельно. «Тапы» по центру и крупнее —
+     это главный экран, туда возвращаются между покупками.
+     ============================================================ */
+  #game{padding-bottom:78px}          /* место под меню, оно перекрывает поток */
+
+  #tabs{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:0;z-index:45;
+    width:100%;max-width:460px;display:flex;align-items:flex-end;
+    background:var(--surface);border-top:1px solid var(--line);
+    padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  }
+  .tab{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;color:var(--muted);font:inherit;font-size:11.5px;
+    cursor:pointer;padding:6px 2px 4px;border-radius:9px;position:relative;
+  }
+  .tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;
+           stroke-linecap:round;stroke-linejoin:round}
+  .tab.is-on{color:var(--text)}
+  .tab:active{background:var(--surface-2)}
+
+  /* центральная крупнее и в цвете пути: у неё другая роль, а не другой размер шрифта */
+  .tab.main{flex:1.15}
+  .tab.main svg{width:27px;height:27px;stroke-width:1.5}
+  .tab.main.is-on{color:var(--accent)}
+  .tab.main.is-on svg{filter:drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 55%, transparent))}
+
+  .tab .dot{
+    display:none;position:absolute;top:3px;right:calc(50% - 17px);
+    width:8px;height:8px;border-radius:50%;background:var(--money);
+    box-shadow:0 0 0 2px var(--surface);
+  }
+  .tab .dot.on{display:block}
+
+  /* заголовок группы внутри развития */
+  .shophead.sub{margin-top:22px}
+
+  /* ============================================================
+     КАПИТАЛ — что уже нажито за забег
+     ============================================================ */
+  #capital{padding-top:4px}
+  .capsum{display:flex;gap:9px;margin-bottom:16px}
+  .capsum .box{
+    flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;
+  }
+  .capsum .box .k{font-size:11.5px;color:var(--muted)}
+  .capsum .box .v{font-size:19px;margin-top:3px;font-variant-numeric:tabular-nums;letter-spacing:-.4px}
+  .capsum .box.tap .v{color:var(--money)}
+  .capsum .box.inc .v{color:var(--income)}
+
+  .capgroup{margin-bottom:16px}
+  .capgroup h3{
+    font-family:var(--font-ui);font-size:11.5px;font-weight:600;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;
+  }
+  .capline{
+    display:flex;align-items:baseline;gap:10px;padding:8px 12px;background:var(--surface);
+    border:1px solid var(--line);border-radius:9px;margin-bottom:5px;font-size:14px;
+  }
+  .capline .n{flex:1;min-width:0}
+  .capline .cnt{color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .capline .give{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:13px}
+  .capline.tap .give{color:var(--money)}
+  .capline.inc .give{color:var(--income)}
+  .capline.perk{border-color:var(--accent)}
+  .capline.perk .give{color:var(--accent);font-size:12.5px}
+  .capempty{color:var(--muted);font-size:13.5px;padding:10px 0 4px;line-height:1.5}
+
   /* палата влияния */
   #meta{margin-bottom:18px}
   #meta .head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px}

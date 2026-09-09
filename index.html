@@ -49,6 +49,7 @@
       </div>
     </header>
 
+    <div id="pane-taps" class="pane">
     <div id="welcome" class="hidden"></div>
 
     <div id="tapzone">
@@ -82,21 +83,46 @@
       <div class="pts" id="rebirthPts"></div>
     </button>
 
-    <div id="shop">
-      <div class="shophead">
-        <h2>Развитие</h2>
-        <button id="bulk">×1</button>
-      </div>
-      <div id="uplist"></div>
-      <div id="perks">
-        <div class="shophead"><h2 id="perkshead">Особое</h2></div>
-        <div id="perklist"></div>
-      </div>
-      <button id="achbtn"></button>
-      <div id="achlist"></div>
     </div>
 
-    <footer><button id="reset">Стереть всё</button></footer>
+    <div id="pane-shop" class="pane hidden">
+      <div class="shophead">
+        <h2>Отдача от рук</h2>
+        <button id="bulk">×1</button>
+      </div>
+      <div id="uplist-tap"></div>
+
+      <div class="shophead sub"><h2>Работает само</h2></div>
+      <div id="uplist-income"></div>
+
+      <div id="perks">
+        <div class="shophead sub"><h2 id="perkshead">Особое</h2></div>
+        <div id="perklist"></div>
+      </div>
+    </div>
+
+    <div id="pane-capital" class="pane hidden">
+      <div id="capital"></div>
+      <button id="achbtn"></button>
+      <div id="achlist"></div>
+      <footer><button id="reset">Стереть всё</button></footer>
+    </div>
+
+    <nav id="tabs">
+      <button class="tab" data-pane="shop">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V13M10 19V8M16 19V4M21 19H3"/></svg>
+        <span>Развитие</span>
+      </button>
+      <button class="tab main is-on" data-pane="taps">
+        <span class="dot" id="tabdot"></span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M6 6l1.5 1.5M16.5 16.5L18 18M18 6l-1.5 1.5M7.5 16.5L6 18"/></svg>
+        <span>Тапы</span>
+      </button>
+      <button class="tab" data-pane="capital">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM4 8l3-4h10l3 4M9 12h6"/></svg>
+        <span>Капитал</span>
+      </button>
+    </nav>
   </section>
   <div id="modal" class="hidden">
     <div class="card">

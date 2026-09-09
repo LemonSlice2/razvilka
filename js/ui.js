@@ -137,6 +137,7 @@ function start(state, offlineEarned){
 
   buildShop();
   buildPerks();
+  showPane('taps');
   draw();
   save();
   scheduleBonus(true);
@@ -145,8 +146,8 @@ function start(state, offlineEarned){
 
 let shopBuilt = false;
 function buildShop(){
-  const list = $('uplist');
-  list.innerHTML = '';
+  const tapList = $('uplist-tap'), incList = $('uplist-income');
+  tapList.innerHTML = ''; incList.innerHTML = '';
   for (const u of unlockedUpgrades()){
     const b = document.createElement('button');
     b.className = 'up';
@@ -156,7 +157,8 @@ function buildShop(){
         <div class="d">${u.desc} <span class="cnt2"></span></div>
       </div><div class="cost"></div>`;
     b.addEventListener('click', () => buy(u));
-    list.appendChild(b);
+    // множитель усиливает силу тапа, поэтому лежит вместе с тапом, а не отдельно
+    (u.type === 'income' ? incList : tapList).appendChild(b);
   }
   shopBuilt = true;
 }
@@ -238,6 +240,80 @@ function choose(title, html, labelA, labelB){
     $('modalYes').onclick = () => close('a');
     $('modalNo').onclick  = () => close('b');
   });
+}
+
+
+/* ============================================================
+   ВКЛАДКИ
+   Развитие, тап и нажитое разведены по трём экранам: одним списком
+   всё это приходилось листать, а тап уезжал наверх и терялся.
+   ============================================================ */
+let activePane = 'taps';
+
+function showPane(name){
+  activePane = name;
+  for (const p of ['taps', 'shop', 'capital'])
+    $('pane-' + p).classList.toggle('hidden', p !== name);
+  document.querySelectorAll('#tabs .tab').forEach(t =>
+    t.classList.toggle('is-on', t.dataset.pane === name));
+  if (name === 'capital') renderCapital();
+  window.scrollTo(0, 0);
+  draw();
+}
+
+document.querySelectorAll('#tabs .tab').forEach(t =>
+  t.addEventListener('click', () => { Sound.wake(); haptic(8); showPane(t.dataset.pane); }));
+
+/* ============================================================
+   КАПИТАЛ — что нажито за этот забег.
+   Список перестраивается при переходе на вкладку, а не каждый кадр:
+   иначе перерисовка съедала бы кадры ради двух цифр.
+   ============================================================ */
+function capitalGain(u){
+  const n = owned(u.id);
+  if (u.type === 'mult')   return '×' + fmt(Math.pow(u.value, n));
+  if (u.type === 'income') return '+' + fmt(u.value * n * legacyMult() * achMult()) + '$/сек';
+  return '+' + fmt(u.value * n) + ' к основе';
+}
+
+function renderCapital(){
+  if (!S || !S.path) return;
+  const bought = unlockedUpgrades().filter(u => owned(u.id) > 0);
+  const hands  = bought.filter(u => u.type !== 'income');
+  const itself = bought.filter(u => u.type === 'income');
+  const perks  = (path().perks || []).filter(pk => perk(pk.id));
+
+  const group = (title, items, cls) => !items.length ? '' :
+    `<div class="capgroup"><h3>${title}</h3>` + items.map(u =>
+      `<div class="capline ${cls}">
+         <span class="n">${u.name}</span>
+         <span class="cnt">${owned(u.id)} ${plural(owned(u.id),'штука','штуки','штук')}</span>
+         <span class="give">${capitalGain(u)}</span>
+       </div>`).join('') + '</div>';
+
+  $('capital').innerHTML =
+    `<div class="capsum">
+       <div class="box tap"><div class="k">Сила тапа</div><div class="v" id="capTap"></div></div>
+       <div class="box inc"><div class="k">Доход</div><div class="v" id="capInc"></div></div>
+     </div>`
+    + group('Отдача от рук', hands, 'tap')
+    + group('Работает само', itself, 'inc')
+    + (perks.length
+        ? `<div class="capgroup"><h3>Особое</h3>` + perks.map(pk =>
+            `<div class="capline perk"><span class="n">${pk.name}</span>
+             <span class="give">${pk.desc}</span></div>`).join('') + '</div>'
+        : '')
+    + (bought.length || perks.length ? ''
+        : '<div class="capempty">Пока ничего не куплено. Всё, что купишь в развитии, соберётся здесь.</div>');
+
+  drawCapitalTotals();
+}
+
+function drawCapitalTotals(){
+  const t = $('capTap'), i = $('capInc');
+  if (!t || !i) return;
+  t.textContent = '+' + fmt(perTap() * focusMult()) + '$';
+  i.textContent = '+' + fmt(perSecond()) + '$/сек';
 }
 
 /* ---------- перерождение ---------- */
@@ -540,6 +616,14 @@ function draw(){
     el.querySelector('.cost').textContent = has ? 'куплено' : fmt(pk.cost) + '$';
     el.disabled = has || S.money < pk.cost;
   }
+
+  if (activePane === 'capital') drawCapitalTotals();
+
+  // точка на вкладке «Тапы»: развилка ждёт или способность готова,
+  // а игрок сейчас смотрит в другое место
+  const abil = path().ability;
+  const waiting = !!pendingEvent || (abil && abilityLeft() <= 0);
+  $('tabdot').classList.toggle('on', waiting && activePane !== 'taps');
 
   checkAchievements();
   drawAchievements();
