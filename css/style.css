@@ -1,4 +1,68 @@
+/* ============================================================
+   ШРИФТЫ
+   Golos Text для интерфейса, PT Serif для заголовков. Оба нарисованы
+   от кириллицы, а не приспособлены под неё, и оба под лицензией OFL —
+   см. fonts/ATTRIBUTION.txt.
+
+   Файлы лежат в репозитории, а не тянутся с Google Fonts: игра должна
+   оставаться самодостаточной папкой и открываться двойным кликом без сети.
+   Поднаборы разделены по unicode-range, поэтому браузер берёт только то,
+   чем реально что-то набрано.
+   ============================================================ */
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:400;font-display:swap;
+  src:url('../fonts/golos-400-cyrillic.woff2') format('woff2');
+  unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:400;font-display:swap;
+  src:url('../fonts/golos-400-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:500;font-display:swap;
+  src:url('../fonts/golos-500-cyrillic.woff2') format('woff2');
+  unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:500;font-display:swap;
+  src:url('../fonts/golos-500-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:600;font-display:swap;
+  src:url('../fonts/golos-600-cyrillic.woff2') format('woff2');
+  unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face{
+  font-family:'Golos Text';font-style:normal;font-weight:600;font-display:swap;
+  src:url('../fonts/golos-600-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family:'PT Serif';font-style:normal;font-weight:400;font-display:swap;
+  src:url('../fonts/ptserif-400-cyrillic.woff2') format('woff2');
+  unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face{
+  font-family:'PT Serif';font-style:normal;font-weight:400;font-display:swap;
+  src:url('../fonts/ptserif-400-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face{
+  font-family:'PT Serif';font-style:normal;font-weight:700;font-display:swap;
+  src:url('../fonts/ptserif-700-cyrillic.woff2') format('woff2');
+  unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face{
+  font-family:'PT Serif';font-style:normal;font-weight:700;font-display:swap;
+  src:url('../fonts/ptserif-700-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
   :root{
+    --font-ui:'Golos Text',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --font-serif:'PT Serif',Georgia,'Times New Roman',serif;
     --bg:#14100E;
     --surface:#1F1916;
     --surface-2:#2A221D;
@@ -14,13 +78,13 @@
   html,body{height:100%}
   body{
     background:var(--bg);color:var(--text);
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-family:var(--font-ui);
     -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
     touch-action:manipulation;overscroll-behavior:none;display:flex;justify-content:center;
   }
   #app{width:100%;max-width:460px;min-height:100%;display:flex;flex-direction:column;
        padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
-  h1,h2,.serif{font-family:"Iowan Old Style",Georgia,"Times New Roman",serif;font-weight:600}
+  h1,h2,.serif{font-family:var(--font-serif);font-weight:700}
 
   /* выбор пути */
   #choose{display:flex;flex-direction:column;justify-content:center;flex:1;gap:12px;padding:28px 0}
@@ -30,7 +94,7 @@
         border-radius:10px;padding:15px;text-align:left;color:inherit;font:inherit;cursor:pointer;width:100%}
   .path:active{background:var(--surface-2)}
   .path:disabled{opacity:.4;cursor:default;border-left-color:var(--line)}
-  .path .name{font-size:18px;font-family:"Iowan Old Style",Georgia,serif}
+  .path .name{font-size:18px;font-family:var(--font-serif)}
   .path .tag{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.45}
   .path .lock{color:var(--legacy);font-size:12.5px;margin-top:6px}
 
@@ -50,11 +114,11 @@
   #tapzone{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px;position:relative}
   #tap{width:172px;height:172px;border-radius:50%;border:1px solid var(--line);
        background:radial-gradient(circle at 38% 32%, var(--surface-2), var(--surface) 70%);
-       color:var(--text);font-family:"Iowan Old Style",Georgia,serif;font-size:19px;cursor:pointer;
+       color:var(--text);font-family:var(--font-serif);font-size:19px;cursor:pointer;
        box-shadow:0 0 0 8px rgba(0,0,0,.18)}
   #tap.hit{transform:scale(.96)}
   #tap .val{display:block;font-size:13px;color:var(--muted);margin-top:6px;
-            font-family:system-ui,sans-serif;font-variant-numeric:tabular-nums}
+            font-family:var(--font-ui);font-variant-numeric:tabular-nums}
   .float{position:absolute;pointer-events:none;color:var(--money);font-size:17px;
          font-variant-numeric:tabular-nums;animation:rise .7s ease-out forwards}
   .float.crit{color:#FF9B6B;font-size:22px;font-weight:600}
@@ -66,13 +130,13 @@
            display:flex;align-items:center;gap:12px}
   #rebirth:active{background:var(--surface-2)}
   #rebirth .t{flex:1}
-  #rebirth .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  #rebirth .t .h{font-size:15px;font-family:var(--font-serif)}
   #rebirth .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
   #rebirth .pts{color:var(--legacy);font-size:19px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
   /* апгрейды */
   #shop{flex:1;padding-bottom:18px}
-  #shop h2{font-size:13.5px;color:var(--muted);font-weight:500;margin:4px 0 9px;font-family:system-ui,sans-serif}
+  #shop h2{font-size:13.5px;color:var(--muted);font-weight:500;margin:4px 0 9px;font-family:var(--font-ui)}
   .up{width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);
       border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;
       text-align:left;color:inherit;font:inherit;cursor:pointer}
@@ -113,7 +177,7 @@
              display:flex;align-items:center;gap:12px;animation:pop .3s ease-out}
   #eventcard:active{background:var(--surface-2)}
   #eventcard .t{flex:1}
-  #eventcard .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif;color:var(--money)}
+  #eventcard .t .h{font-size:15px;font-family:var(--font-serif);color:var(--money)}
   #eventcard .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
   #eventcard .go{font-size:13px;color:var(--money);white-space:nowrap}
   #modal .row.two button{flex:1}
@@ -122,7 +186,7 @@
   /* освоенные пути */
   #mastery{margin-bottom:16px}
   #mastery h2{font-size:13.5px;color:var(--muted);font-weight:500;margin-bottom:8px;
-              font-family:system-ui,sans-serif}
+              font-family:var(--font-ui)}
   .trait{display:flex;gap:10px;align-items:baseline;background:var(--surface);
          border:1px solid var(--income);border-radius:9px;padding:9px 12px;margin-bottom:6px;font-size:13.5px}
   .trait .m{color:var(--income);flex:0 0 auto}
@@ -135,7 +199,7 @@
            color:inherit;font:inherit;text-align:left}
   #ability .inner{position:relative;z-index:2;padding:12px 14px;display:flex;align-items:center;gap:12px}
   #ability .t{flex:1;min-width:0}
-  #ability .t .h{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  #ability .t .h{font-size:15px;font-family:var(--font-serif)}
   #ability .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.35}
   #ability .when{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
   #ability .cd{position:absolute;inset:0 auto 0 0;background:var(--surface-2);width:0%;z-index:1}
@@ -168,7 +232,7 @@
   .perk.bought{border-color:var(--income);opacity:1}
   .perk:not(:disabled):active{background:var(--surface-2)}
   .perk .body{flex:1;min-width:0}
-  .perk .n{font-size:15px;font-family:"Iowan Old Style",Georgia,serif}
+  .perk .n{font-size:15px;font-family:var(--font-serif)}
   .perk .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
   .perk .cost{font-size:14.5px;color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
   .perk.bought .cost{color:var(--income);font-size:13px}
@@ -190,7 +254,7 @@
          padding:11px 16px;max-width:330px;box-shadow:0 8px 30px rgba(0,0,0,.5);
          animation:toastin .35s ease-out}
   #toast .h{font-size:12px;color:var(--legacy)}
-  #toast .n{font-size:15px;font-family:"Iowan Old Style",Georgia,serif;margin-top:2px}
+  #toast .n{font-size:15px;font-family:var(--font-serif);margin-top:2px}
   @keyframes toastin{from{opacity:0;transform:translate(-50%,14px)}to{opacity:1;transform:translate(-50%,0)}}
 
   /* активные бонусы и звук */
@@ -207,14 +271,14 @@
          background:radial-gradient(circle at 36% 30%, #FFD98A, var(--money) 62%, #A9701F);
          box-shadow:0 6px 22px rgba(224,163,62,.4);z-index:40;
          display:flex;align-items:center;justify-content:center;
-         font-family:"Iowan Old Style",Georgia,serif;font-size:26px;color:#3A2607;
+         font-family:var(--font-serif);font-size:26px;color:#3A2607;
          animation:pop .35s cubic-bezier(.2,1.4,.4,1), pulse 1.6s ease-in-out .35s infinite}
   .bonus.leaving{animation:fade .3s ease-in forwards}
   @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
   @keyframes fade{to{transform:scale(.6);opacity:0}}
   .grab{position:fixed;pointer-events:none;z-index:41;color:var(--money);
-        font-family:"Iowan Old Style",Georgia,serif;font-size:20px;
+        font-family:var(--font-serif);font-size:20px;
         animation:rise 1s ease-out forwards}
 
   /* собственное окно подтверждения: системный confirm() блокируется в песочнице */

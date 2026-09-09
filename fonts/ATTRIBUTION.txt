@@ -1,0 +1,23 @@
+Шрифты игры «Под солнцем»
+
+Golos Text
+  © 2019 The Golos Text Project Authors
+  https://github.com/googlefonts/golos-text
+  Лицензия SIL Open Font License 1.1 — полный текст в OFL-golostext.txt
+  Начертания: 400, 500, 600
+
+PT Serif
+  © 2010 ParaType Ltd.
+  Зарезервированные имена: "PT Sans", "PT Serif", "ParaType"
+  https://www.paratype.com
+  Лицензия SIL Open Font License 1.1 — полный текст в OFL-ptserif.txt
+  Начертания: 400, 700
+
+Оба семейства нарисованы от кириллицы, а не приспособлены под неё.
+
+Файлы — поднаборы latin и cyrillic в формате woff2, взяты с Google Fonts
+и лежат в репозитории намеренно: игра должна открываться двойным кликом
+и работать без сети. Подключение и диапазоны — в начале css/style.css.
+
+OFL разрешает такое использование и распространение, включая коммерческое,
+при условии что рядом лежит текст лицензии. Он лежит.
