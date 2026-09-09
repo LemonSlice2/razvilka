@@ -15,6 +15,7 @@ const TOP_SIZE = 20;
 const MAX_AGE = 24 * 3600;      // initData старше суток не принимаем
 const MIN_GAP = 10;             // не чаще раза в 10 секунд от одного игрока
 const SCORE_CAP = 1e30;         // выше этого — явно подделка, а не игра
+const FIGHT_COOLDOWN = 60;      // секунд между драками одного игрока
 
 /* ---------- проверка подписи Telegram ----------
    secret = HMAC_SHA256(ключ "WebAppData", сообщение = токен бота)
@@ -69,6 +70,37 @@ function displayName(u){
   return name.slice(0, 40);
 }
 
+function clamp(v, lo, hi){
+  const n = Number(v);
+  if (!isFinite(n)) return lo;
+  return Math.min(hi, Math.max(lo, n));
+}
+
+/* ---------- драка ----------
+   Считается здесь, а не на клиенте: иначе побеждали бы все.
+   Нападающий бьёт первым — это его преимущество за то, что он ищет драку.
+   Минимум единица урона за удар, поэтому бой всегда заканчивается. */
+function resolveFight(a, b){
+  let ah = a.health, bh = b.health, rounds = 0;
+  const swing = () => 0.8 + Math.random() * 0.4;
+  while (rounds < 300){
+    rounds++;
+    bh -= Math.max(1, a.power * swing());
+    if (bh <= 0) break;
+    ah -= Math.max(1, b.power * swing());
+    if (ah <= 0) break;
+  }
+  return { win: bh <= 0, rounds, left: Math.max(0, Math.round(ah)) };
+}
+
+/* Очки по Эло: у сильного отобрать много, у слабого — мало.
+   Так фарм слабых противников быстро перестаёт окупаться. */
+const K_FACTOR = 24;
+function bpDelta(mine, theirs, win){
+  const expected = 1 / (1 + Math.pow(10, (theirs - mine) / 400));
+  return Math.round(K_FACTOR * ((win ? 1 : 0) - expected));
+}
+
 /* ---------- ответы ---------- */
 function cors(env){
   return {
@@ -82,9 +114,11 @@ const json = (env, data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { 'Content-Type': 'application/json; charset=utf-8', ...cors(env) }
 });
 
-async function topRows(env){
+async function topRows(env, order){
+  const byBp = order === 'bp';
   const { results } = await env.DB.prepare(
-    'SELECT id, name, score, runs, path FROM players ORDER BY score DESC LIMIT ?1'
+    `SELECT id, name, score, runs, path, bp, power, health FROM players
+     ORDER BY ${byBp ? 'bp' : 'score'} DESC LIMIT ?1`
   ).bind(TOP_SIZE).all();
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM players').first('n');
   return { total: total || 0, top: (results || []).map((r, i) => ({ place: i + 1, ...r })) };
@@ -97,7 +131,7 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors(env) });
 
     if (url.pathname === '/top' && request.method === 'GET')
-      return json(env, await topRows(env));
+      return json(env, await topRows(env, url.searchParams.get('by')));
 
     if (url.pathname === '/sync' && request.method === 'POST'){
       if (!env.BOT_TOKEN) return json(env, { error: 'BOT_TOKEN не задан' }, 500);
@@ -121,21 +155,77 @@ export default {
       // отсекает случайные откаты и долбёжку запросами.
       const fresh = !prev || (score > prev.score && now - prev.updated >= MIN_GAP);
 
-      if (fresh){
+      // Сила и здоровье обновляются всегда, даже если счёт не вырос:
+      // иначе прокачанная вещь не попадёт в драку до следующего заработка.
+      const power  = clamp(body.power,  0, 100000);
+      const health = clamp(body.health, 100, 1000000);
+
+      if (fresh || !prev){
         await env.DB.prepare(
-          `INSERT INTO players (id, name, score, runs, path, updated)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+          `INSERT INTO players (id, name, score, runs, path, updated, power, health)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
            ON CONFLICT(id) DO UPDATE SET
-             name = ?2, score = ?3, runs = ?4, path = ?5, updated = ?6`
+             name = ?2, score = ?3, runs = ?4, path = ?5, updated = ?6, power = ?7, health = ?8`
         ).bind(user.id, displayName(user), score,
-               Number(body.runs) || 0, String(body.path || '').slice(0, 20), now).run();
+               Number(body.runs) || 0, String(body.path || '').slice(0, 20), now,
+               power, health).run();
+      } else {
+        await env.DB.prepare(
+          'UPDATE players SET name = ?2, power = ?3, health = ?4 WHERE id = ?1'
+        ).bind(user.id, displayName(user), power, health).run();
       }
 
       const place = await env.DB.prepare(
         'SELECT COUNT(*) + 1 AS p FROM players WHERE score > (SELECT score FROM players WHERE id = ?1)'
       ).bind(user.id).first('p');
 
-      return json(env, { ...(await topRows(env)), me: { id: user.id, place: place || null } });
+      const mine = await env.DB.prepare('SELECT bp FROM players WHERE id = ?1').bind(user.id).first();
+      return json(env, { ...(await topRows(env, body.by)),
+                         me: { id: user.id, place: place || null, bp: mine ? mine.bp : 1000 } });
+    }
+
+    if (url.pathname === '/fight' && request.method === 'POST'){
+      if (!env.BOT_TOKEN) return json(env, { error: 'BOT_TOKEN не задан' }, 500);
+      let body;
+      try { body = await request.json(); } catch(e){ return json(env, { error: 'плохой json' }, 400); }
+
+      const user = await checkInitData(body.initData || '', env.BOT_TOKEN);
+      if (!user || !user.id) return json(env, { error: 'подпись не сошлась' }, 403);
+
+      const me = await env.DB.prepare(
+        'SELECT id, name, power, health, bp, last_fight FROM players WHERE id = ?1').bind(user.id).first();
+      if (!me) return json(env, { error: 'сначала поиграй' }, 400);
+      if (me.power <= 0) return json(env, { error: 'нечем драться: прокачай хотя бы одну вещь' }, 400);
+
+      const now = Math.floor(Date.now() / 1000);
+      const wait = FIGHT_COOLDOWN - (now - me.last_fight);
+      if (wait > 0) return json(env, { error: 'рано', wait }, 429);
+
+      // Противник рядом по очкам: драться со случайным сильно сильнее или
+      // сильно слабее одинаково неинтересно.
+      const foe = await env.DB.prepare(
+        `SELECT id, name, power, health, bp FROM players
+         WHERE id != ?1 AND power > 0
+         ORDER BY ABS(bp - ?2) ASC, RANDOM() LIMIT 5`
+      ).bind(me.id, me.bp).all();
+      const pool = foe.results || [];
+      if (!pool.length) return json(env, { error: 'пока не с кем драться' }, 400);
+      const enemy = pool[Math.floor(Math.random() * pool.length)];
+
+      const r = resolveFight(me, enemy);
+      const delta = bpDelta(me.bp, enemy.bp, r.win);
+      const myBp = Math.max(0, me.bp + delta);
+      const foeBp = Math.max(0, enemy.bp - delta);
+
+      await env.DB.batch([
+        env.DB.prepare('UPDATE players SET bp = ?2, last_fight = ?3 WHERE id = ?1').bind(me.id, myBp, now),
+        env.DB.prepare('UPDATE players SET bp = ?2 WHERE id = ?1').bind(enemy.id, foeBp)
+      ]);
+
+      return json(env, {
+        win: r.win, rounds: r.rounds, left: r.left, delta, bp: myBp,
+        enemy: { name: enemy.name, power: enemy.power, health: enemy.health, bp: enemy.bp }
+      });
     }
 
     return json(env, { error: 'нет такой ручки' }, 404);

@@ -420,13 +420,25 @@ function renderProfile(){
            `<div class="trait"><span class="m">✦</span>
             <span><span>${t.name}</span><div class="d">${t.desc}</div></span></div>`).join('') + `</div>`
        : '') +
-     `<div class="capgroup"><h3>Рейтинг</h3>${rankBoard(p)}</div>`;
+     `<div class="capgroup"><h3>Драка</h3>${fightBox()}</div>` +
+     `<div class="capgroup"><h3>Рейтинг</h3>
+        <div class="shoptabs">
+          <button class="shoptab${Rating.board === 'score' ? ' is-on' : ''}" data-board="score">По заработку</button>
+          <button class="shoptab${Rating.board === 'bp' ? ' is-on' : ''}" data-board="bp">По боевым очкам</button>
+        </div>${rankBoard(p)}</div>`;
 
   // Обновление асинхронное: рисуем что есть, а когда придёт свежее —
   // перерисовываем ещё раз. refresh() отдаёт false, если ничего не менялось,
   // поэтому в петлю это не сваливается.
   // панель могла быть открыта до перерисовки — состояние переживает её
   if (shopOpen) $('shoppanel').classList.add('open');
+  const atk = $('profile').querySelector('#attackbtn');
+  if (atk) atk.addEventListener('click', doAttack);
+  document.querySelectorAll('#profile [data-board]').forEach(b =>
+    b.addEventListener('click', () => {
+      if (Rating.setBoard(b.dataset.board)) renderProfile();
+    }));
+
   renderShop();
   $('shopbtn').addEventListener('click', () => {
     shopOpen = !shopOpen;
@@ -529,12 +541,55 @@ const RANK_NOTE = {
   'error':          'Сервер рейтинга не отвечает. Попробуй позже, на игру это не влияет.'
 };
 
+/* ============================================================
+   ДРАКА
+   Исход считает сервер. Клиент только отправляет вызов и показывает,
+   что вышло — иначе побеждали бы все.
+   ============================================================ */
+let fightBusy = false, fightMsg = null;
+
+function fightBox(){
+  const power = powerOf();
+  if (!power)
+    return `<div class="capnote">Драться нечем. Улучши любую вещь — сила появится, и можно будет вызывать других игроков.</div>`;
+
+  const last = Rating.lastFight;
+  const result = fightMsg ? `<div class="fightmsg${fightMsg.bad ? ' bad' : ''}">${escapeText(fightMsg.text)}</div>`
+    : last ? `<div class="fightmsg${last.win ? '' : ' bad'}">${
+        escapeText(last.enemy.name)}: ${last.win ? 'победа' : 'поражение'} за ${last.rounds} ${
+        plural(last.rounds,'раунд','раунда','раундов')} · ${last.delta >= 0 ? '+' : ''}${last.delta} очков</div>`
+    : '';
+
+  return `<div class="fightrow">
+      <div class="fs"><div class="v">${fmt(power)}</div><div class="k">сила</div></div>
+      <div class="fs"><div class="v">${fmt(healthOf())}</div><div class="k">здоровье</div></div>
+      <button id="attackbtn" ${fightBusy ? 'disabled' : ''}>${fightBusy ? 'Ищу…' : 'Найти противника'}</button>
+    </div>${result}`;
+}
+
+async function doAttack(){
+  if (fightBusy) return;
+  fightBusy = true; fightMsg = null;
+  renderProfile();
+
+  const r = await Rating.attack();
+  fightBusy = false;
+  if (r.error){ fightMsg = { text: r.error, bad: true }; }
+  else {
+    fightMsg = null;
+    Sound.bonus(); haptic(r.win ? [16, 50, 24] : [30]);
+  }
+  renderProfile();
+}
+
 function rankBoard(p){
   const st = Rating.state;
   const mine = `<div class="rankrow me">
       <span class="place">${(st.me && st.me.place) || '—'}</span>
       <span class="who">Ты · ${p.name}</span>
-      <span class="score">${fmt(S.stats.earnedTotal)}$</span>
+      <span class="score">${Rating.board === 'bp'
+        ? Math.round((Rating.state.me && Rating.state.me.bp) || 1000) + ' очк.'
+        : fmt(S.stats.earnedTotal) + '$'}</span>
     </div>`;
 
   if (st.status !== 'ok')
@@ -545,7 +600,7 @@ function rankBoard(p){
     <div class="rankrow${r.id === meId ? ' me' : ''}">
       <span class="place">${r.place}</span>
       <span class="who">${escapeText(r.name)}</span>
-      <span class="score">${fmt(r.score)}$</span>
+      <span class="score">${Rating.board === 'bp' ? Math.round(r.bp) + ' очк.' : fmt(r.score) + '$'}</span>
     </div>`).join('');
 
   // своя строка отдельно, если в двадцатку не попал

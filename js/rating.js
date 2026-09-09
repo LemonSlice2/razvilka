@@ -16,6 +16,8 @@ const Rating = (() => {
 
   let state = { status: 'off', top: [], me: null, total: 0 };
   let lastTry = 0, inFlight = false;
+  let board = 'score';        // по чему таблица: заработок или боевые очки
+  let fight = null;           // итог последней драки, для показа
 
   function reason(){
     if (!RATING_URL) return 'not-configured';
@@ -34,7 +36,10 @@ const Rating = (() => {
           initData: TG.initData,
           score: S.stats.earnedTotal,
           runs: S.runs,
-          path: S.path
+          path: S.path,
+          power: powerOf(),
+          health: healthOf(),
+          by: board
         }),
         signal: ctrl.signal
       });
@@ -51,6 +56,40 @@ const Rating = (() => {
 
   return {
     get state(){ return state; },
+    get board(){ return board; },
+    get lastFight(){ return fight; },
+
+    // Переключение таблицы: сразу перезапрашиваем, иначе список не поменяется
+    setBoard(name){
+      if (board === name) return false;
+      board = name; lastTry = 0;
+      return true;
+    },
+
+    /* Драка. Считает сервер: клиент только показывает исход.
+       Ошибки внятные — «рано», «нечем драться», «не с кем» — это разные вещи
+       и лечатся по-разному. */
+    async attack(){
+      if (reason() || !S || !S.path) return { error: 'Драка работает только внутри Telegram.' };
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), TIMEOUT);
+      try {
+        const res = await fetch(RATING_URL.replace(/\/$/, '') + '/fight', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: TG.initData }),
+          signal: ctrl.signal
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.status === 429) return { error: 'Рано. Следующая драка через ' + dur(data.wait || 60) + '.' };
+        if (!res.ok) return { error: data.error || 'Сервер не ответил.' };
+        fight = data;
+        lastTry = 0;                     // счёт мог измениться — обновим таблицу
+        return data;
+      } catch(e){
+        return { error: 'Сервер не ответил.' };
+      } finally { clearTimeout(timer); }
+    },
 
     /* Возвращает true, только если данные реально поменялись — тогда экран
        перерисовывается ещё раз. Иначе перерисовка звала бы обновление,
