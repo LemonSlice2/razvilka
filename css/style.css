@@ -220,13 +220,9 @@
   .pf .k{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
 
   /* драка */
-  .fightrow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .fightrow .fs{flex:0 0 auto;background:var(--surface);border:1px solid var(--line);
-                border-radius:10px;padding:8px 12px;text-align:center}
-  .fightrow .fs .v{font-size:16px;font-variant-numeric:tabular-nums}
-  .fightrow .fs .k{font-size:10.5px;color:var(--muted);margin-top:1px}
-  #attackbtn{flex:1;background:var(--accent);border:1px solid var(--accent);border-radius:10px;
-             color:#17110D;font:inherit;font-size:14.5px;font-weight:600;padding:13px 10px;cursor:pointer}
+  #attackbtn{width:100%;background:var(--accent);border:1px solid var(--accent);border-radius:10px;
+             color:#17110D;font:inherit;font-size:15px;font-weight:600;padding:14px 10px;
+             cursor:pointer;margin-bottom:8px}
   #attackbtn:disabled{opacity:.5;cursor:default}
   #attackbtn:not(:disabled):active{opacity:.82}
   .fightmsg{font-size:13px;color:var(--income);background:var(--surface);
@@ -234,10 +230,13 @@
   .fightmsg.bad{color:var(--muted);border-color:var(--line)}
 
   .rankrow{
+    width:100%;font:inherit;color:inherit;cursor:pointer;text-align:left;
     display:flex;align-items:baseline;gap:11px;padding:11px 13px;background:var(--surface);
     border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:14px;
   }
   .rankrow.me{border-color:var(--legacy)}
+  .rankrow:active{background:var(--surface-2)}
+  #foeback{margin-bottom:14px}
   .rankrow .place{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:18px}
   .rankrow .who{flex:1;min-width:0}
   .rankrow .score{color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}

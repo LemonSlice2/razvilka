@@ -69,15 +69,16 @@ const Rating = (() => {
     /* Драка. Считает сервер: клиент только показывает исход.
        Ошибки внятные — «рано», «нечем драться», «не с кем» — это разные вещи
        и лечатся по-разному. */
-    async attack(){
+    async attack(targetId){
       if (reason() || !S || !S.path) return { error: 'Драка работает только внутри Telegram.' };
+      if (!targetId) return { error: 'Выбери противника в таблице.' };
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), TIMEOUT);
       try {
         const res = await fetch(RATING_URL.replace(/\/$/, '') + '/fight', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: TG.initData }),
+          body: JSON.stringify({ initData: TG.initData, target: targetId }),
           signal: ctrl.signal
         });
         const data = await res.json().catch(() => ({}));

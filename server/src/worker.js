@@ -1,8 +1,9 @@
 /* Рейтинг «Под солнцем» — Cloudflare Worker.
 
    Две ручки:
-     POST /sync  { initData, score, runs, path }  -> { place, total, top:[...] }
-     GET  /top                                     -> { total, top:[...] }
+     POST /sync   { initData, score, runs, path, power, health } -> { place, total, top }
+     POST /fight  { initData, target }                          -> { win, rounds, delta, bp }
+     GET  /top[?by=bp]                                          -> { total, top }
 
    Здесь модульный синтаксис, в отличие от самой игры: это другой рантайм,
    а не браузер с file://, и запрет на ES-модули из CLAUDE.md сюда не относится.
@@ -201,16 +202,16 @@ export default {
       const wait = FIGHT_COOLDOWN - (now - me.last_fight);
       if (wait > 0) return json(env, { error: 'рано', wait }, 429);
 
-      // Противник рядом по очкам: драться со случайным сильно сильнее или
-      // сильно слабее одинаково неинтересно.
-      const foe = await env.DB.prepare(
-        `SELECT id, name, power, health, bp FROM players
-         WHERE id != ?1 AND power > 0
-         ORDER BY ABS(bp - ?2) ASC, RANDOM() LIMIT 5`
-      ).bind(me.id, me.bp).all();
-      const pool = foe.results || [];
-      if (!pool.length) return json(env, { error: 'пока не с кем драться' }, 400);
-      const enemy = pool[Math.floor(Math.random() * pool.length)];
+      // Противника выбирает игрок в таблице лидеров, сервер только проверяет,
+      // что тот существует, это не он сам и ему есть чем отвечать.
+      const targetId = Number(body.target);
+      if (!targetId || targetId === me.id)
+        return json(env, { error: 'выбери противника в таблице' }, 400);
+
+      const enemy = await env.DB.prepare(
+        'SELECT id, name, power, health, bp FROM players WHERE id = ?1').bind(targetId).first();
+      if (!enemy) return json(env, { error: 'такого игрока нет' }, 404);
+      if (enemy.power <= 0) return json(env, { error: 'у него нечем защищаться' }, 400);
 
       const r = resolveFight(me, enemy);
       const delta = bpDelta(me.bp, enemy.bp, r.win);

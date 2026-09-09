@@ -370,8 +370,12 @@ function drawCapitalTotals(){
    Путь, черты освоенных путей, достижения, место в рейтинге.
    Нажитое живёт на соседней вкладке и сюда не дублируется.
    ============================================================ */
+/* Кого сейчас смотрим. null — свой профиль. */
+let viewingFoe = null;
+
 function renderProfile(){
   if (!S || !S.path) return;
+  if (viewingFoe) return renderFoe();
   const p = path();
   const traits = (S.mastered || []).map(id => MASTERY[id]).filter(Boolean);
   const done = S.achieved.length;
@@ -420,7 +424,6 @@ function renderProfile(){
            `<div class="trait"><span class="m">✦</span>
             <span><span>${t.name}</span><div class="d">${t.desc}</div></span></div>`).join('') + `</div>`
        : '') +
-     `<div class="capgroup"><h3>Драка</h3>${fightBox()}</div>` +
      `<div class="capgroup"><h3>Рейтинг</h3>
         <div class="shoptabs">
           <button class="shoptab${Rating.board === 'score' ? ' is-on' : ''}" data-board="score">По заработку</button>
@@ -432,8 +435,14 @@ function renderProfile(){
   // поэтому в петлю это не сваливается.
   // панель могла быть открыта до перерисовки — состояние переживает её
   if (shopOpen) $('shoppanel').classList.add('open');
-  const atk = $('profile').querySelector('#attackbtn');
-  if (atk) atk.addEventListener('click', doAttack);
+  document.querySelectorAll('#profile [data-foe]').forEach(b =>
+    b.addEventListener('click', () => {
+      const foe = (Rating.state.top || []).find(r => String(r.id) === b.dataset.foe);
+      if (!foe) return;
+      viewingFoe = foe; fightMsg = null;
+      window.scrollTo(0, 0);
+      renderProfile();
+    }));
   document.querySelectorAll('#profile [data-board]').forEach(b =>
     b.addEventListener('click', () => {
       if (Rating.setBoard(b.dataset.board)) renderProfile();
@@ -546,37 +555,71 @@ const RANK_NOTE = {
    Исход считает сервер. Клиент только отправляет вызов и показывает,
    что вышло — иначе побеждали бы все.
    ============================================================ */
-let fightBusy = false, fightMsg = null;
+/* Профиль выбранного соперника. Данные берутся из таблицы лидеров —
+   она уже отдаёт силу, здоровье и очки, так что отдельной ручки не нужно. */
+function renderFoe(){
+  const f = viewingFoe;
+  const mine = Rating.state.me || {};
+  const myBp = Math.round(mine.bp || 1000);
+  const iAmHim = String(f.id) === String(mine.id);
+  const stat = (v, k) => '<div class="pf"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
+  const pathName = f.path ? ((PATHS.find(p => p.id === f.path) || {}).name || '') : '';
+  const runsText = f.runs ? ' · ' + f.runs + ' ' + plural(f.runs, 'перерождение', 'перерождения', 'перерождений') : '';
 
-function fightBox(){
-  const power = powerOf();
-  if (!power)
-    return `<div class="capnote">Драться нечем. Улучши любую вещь — сила появится, и можно будет вызывать других игроков.</div>`;
+  $('profile').innerHTML =
+    '<button id="foeback" class="shoptab">← Назад к рейтингу</button>' +
+    '<div class="pcard">' +
+      '<div class="pemblem" style="--pc:var(--legacy)">' + escapeText(f.name).charAt(0) + '</div>' +
+      '<div class="pwho">' +
+        '<div class="pname">' + escapeText(f.name) + '</div>' +
+        '<div class="ptag">' + pathName + runsText + '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pfacts">' +
+      stat(fmt(f.power), 'сила') +
+      stat(fmt(f.health), 'здоровье') +
+      stat(Math.round(f.bp), 'боевые очки') +
+      stat(fmt(f.score) + '$', 'заработано') +
+      stat(fmt(powerOf()), 'твоя сила') +
+      stat(myBp, 'твои очки') +
+    '</div>' +
+    '<div class="capgroup"><h3>Драка</h3>' + foeFightBox(f, iAmHim) + '</div>';
 
-  const last = Rating.lastFight;
-  const result = fightMsg ? `<div class="fightmsg${fightMsg.bad ? ' bad' : ''}">${escapeText(fightMsg.text)}</div>`
-    : last ? `<div class="fightmsg${last.win ? '' : ' bad'}">${
-        escapeText(last.enemy.name)}: ${last.win ? 'победа' : 'поражение'} за ${last.rounds} ${
-        plural(last.rounds,'раунд','раунда','раундов')} · ${last.delta >= 0 ? '+' : ''}${last.delta} очков</div>`
-    : '';
-
-  return `<div class="fightrow">
-      <div class="fs"><div class="v">${fmt(power)}</div><div class="k">сила</div></div>
-      <div class="fs"><div class="v">${fmt(healthOf())}</div><div class="k">здоровье</div></div>
-      <button id="attackbtn" ${fightBusy ? 'disabled' : ''}>${fightBusy ? 'Ищу…' : 'Найти противника'}</button>
-    </div>${result}`;
+  $('foeback').addEventListener('click', () => { viewingFoe = null; fightMsg = null; renderProfile(); });
+  const atk = $('profile').querySelector('#attackbtn');
+  if (atk) atk.addEventListener('click', () => doAttack(f.id));
 }
 
-async function doAttack(){
+function foeFightBox(f, iAmHim){
+  const msg = fightMsg
+    ? '<div class="fightmsg' + (fightMsg.bad ? ' bad' : '') + '">' + escapeText(fightMsg.text) + '</div>'
+    : '';
+  if (iAmHim) return '<div class="capnote">Это ты. На себя не нападёшь.</div>';
+  if (!powerOf())
+    return '<div class="capnote">Драться нечем. Улучши любую вещь — сила появится.</div>' + msg;
+  if (!f.power)
+    return '<div class="capnote">У него нечем защищаться — драки не выйдет.</div>' + msg;
+  return '<button id="attackbtn"' + (fightBusy ? ' disabled' : '') + '>' +
+         (fightBusy ? 'Дерусь…' : 'Напасть') + '</button>' + msg;
+}
+
+let fightBusy = false, fightMsg = null;
+
+async function doAttack(targetId){
   if (fightBusy) return;
   fightBusy = true; fightMsg = null;
   renderProfile();
 
-  const r = await Rating.attack();
+  const r = await Rating.attack(targetId);
   fightBusy = false;
-  if (r.error){ fightMsg = { text: r.error, bad: true }; }
-  else {
-    fightMsg = null;
+  if (r.error){
+    fightMsg = { text: r.error, bad: true };
+  } else {
+    fightMsg = { bad: !r.win, text:
+      (r.win ? 'Победа за ' : 'Поражение за ') + r.rounds + ' ' +
+      plural(r.rounds, 'раунд', 'раунда', 'раундов') +
+      (r.win ? ', осталось ' + r.left + ' здоровья' : '') +
+      ' · ' + (r.delta >= 0 ? '+' : '') + r.delta + ' очков, стало ' + Math.round(r.bp) };
     Sound.bonus(); haptic(r.win ? [16, 50, 24] : [30]);
   }
   renderProfile();
@@ -597,11 +640,11 @@ function rankBoard(p){
 
   const meId = st.me && st.me.id;
   const rows = st.top.map(r => `
-    <div class="rankrow${r.id === meId ? ' me' : ''}">
+    <button class="rankrow${r.id === meId ? ' me' : ''}" data-foe="${r.id}">
       <span class="place">${r.place}</span>
       <span class="who">${escapeText(r.name)}</span>
       <span class="score">${Rating.board === 'bp' ? Math.round(r.bp) + ' очк.' : fmt(r.score) + '$'}</span>
-    </div>`).join('');
+    </button>`).join('');
 
   // своя строка отдельно, если в двадцатку не попал
   const outside = meId && !st.top.some(r => r.id === meId) ? mine : '';
