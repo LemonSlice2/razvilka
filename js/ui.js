@@ -398,6 +398,7 @@ function renderProfile(){
                       data-gear="${g.id}" ${can ? '' : 'disabled'}>
           <div class="lvl">${lvl ? 'ур. ' + lvl + '/' + GEAR_MAX : '—'}</div>
           <div class="gn">${g.name}</div>
+          <div class="ge">${gearEffect(g)}</div>
           <div class="gp">${bottom}</div>
         </button>`;
     }).join('') + `</div>
@@ -440,6 +441,17 @@ function renderProfile(){
   });
 }
 
+/* Что вещь даёт сейчас и что добавит следующий уровень.
+   «Разговор становится короче» не объясняет ничего — люди спрашивали. */
+function gearEffect(g){
+  const lvl = gearLevel(g.id);
+  const parts = [];
+  if (g.power)  parts.push((g.power  * lvl) + ' силы');
+  if (g.health) parts.push((g.health * lvl) + ' здоровья');
+  return lvl ? parts.join(' · ') : (g.power ? '+' + g.power + ' силы' : '') +
+         (g.power && g.health ? ' · ' : '') + (g.health ? '+' + g.health + ' здоровья' : '');
+}
+
 /* Подсказка под полосой вещей: что происходит прямо сейчас.
    Без неё непонятно ни почему кнопки серые, ни сколько ждать. */
 function gearHint(){
@@ -453,7 +465,8 @@ function gearHint(){
   if (cheapest === undefined) return 'Все вещи докачаны до предела.';
   if (S.crystals < cheapest)
     return `Кристаллов: ${S.crystals}. На ближайшее улучшение нужно ${cheapest} — купи в магазине за влияние.`;
-  return `Кристаллов: ${S.crystals}. Жми на вещь, чтобы начать улучшение.`;
+  return `Кристаллов: ${S.crystals}. Жми на вещь, чтобы начать улучшение. ` +
+         'Сила и здоровье идут в боевой рейтинг, на доход и тап не влияют.';
 }
 
 /* Отсчёт обновляется точечно: перерисовывать весь профиль каждый кадр
