@@ -69,6 +69,14 @@ function freshRun(pathId, keep){
   return state;
 }
 function path(){ return PATHS.find(p => p.id === S.path); }
+
+// Последние ступени лестницы закрыты, пока не куплен «Размах».
+// Всё, что показывает или перебирает лестницу, идёт через эту функцию —
+// иначе стенд и игра разойдутся в том, что игроку вообще доступно.
+function unlockedUpgrades(){
+  const size = metaLevel('razmah');
+  return path().upgrades.filter(u => u.unlock <= size);
+}
 function owned(id){ return S.owned[id] || 0; }
 function costMult(){
   return buffMult('cost')

@@ -147,7 +147,7 @@ let shopBuilt = false;
 function buildShop(){
   const list = $('uplist');
   list.innerHTML = '';
-  for (const u of path().upgrades){
+  for (const u of unlockedUpgrades()){
     const b = document.createElement('button');
     b.className = 'up';
     b.dataset.id = u.id;
@@ -545,7 +545,7 @@ function draw(){
   drawAchievements();
 
   if (!shopBuilt) return;
-  for (const u of path().upgrades){
+  for (const u of unlockedUpgrades()){
     const el = document.querySelector(`.up[data-id="${u.id}"]`);
     const n = owned(u.id), maxed = n >= u.max;
     const want = maxed ? 0 : bulkAmount(u);

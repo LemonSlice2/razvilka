@@ -29,7 +29,7 @@ const PLAYER = `
 function buyCheapest(){
   let bought = 0;
   for(;;){
-    const opts = path().upgrades.filter(u => owned(u.id) < u.max)
+    const opts = unlockedUpgrades().filter(u => owned(u.id) < u.max)
       .map(u => ({ u, c: costOf(u) })).filter(o => o.c <= S.money).sort((a,b) => a.c - b.c);
     if (!opts.length) return bought;
     S.money -= opts[0].c;
