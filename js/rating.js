@@ -38,6 +38,10 @@ const Rating = (() => {
         }),
         signal: ctrl.signal
       });
+      // 403 — это не «сервер лежит», а «подпись не сошлась»: обычно значит,
+      // что на сервере лежит токен, который уже отозвали в BotFather.
+      // Разные причины должны выглядеть по-разному, иначе чинишь наугад.
+      if (res.status === 403) return { status: 'bad-signature', top: [], me: null, total: 0 };
       if (!res.ok) throw new Error('http ' + res.status);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
