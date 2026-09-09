@@ -390,22 +390,53 @@ function renderProfile(){
            `<div class="trait"><span class="m">✦</span>
             <span><span>${t.name}</span><div class="d">${t.desc}</div></span></div>`).join('') + `</div>`
        : '') +
-     `<div class="capgroup">
-        <h3>Рейтинг</h3>
-        <div class="rankrow me">
-          <span class="place">—</span>
-          <span class="who">Ты · ${p.name}</span>
-          <span class="score">${fmt(S.stats.earnedTotal)}$</span>
-        </div>
-        <div class="capnote">${RANK_NOTE}</div>
-      </div>`;
+     `<div class="capgroup"><h3>Рейтинг</h3>${rankBoard(p)}</div>`;
+
+  // Обновление асинхронное: рисуем что есть, а когда придёт свежее —
+  // перерисовываем ещё раз. refresh() отдаёт false, если ничего не менялось,
+  // поэтому в петлю это не сваливается.
+  Rating.refresh().then(changed => {
+    if (changed && activePane === 'profile') renderProfile();
+  });
 }
 
-// Пока в игре один участник — ты. Общий рейтинг требует общего хранилища,
-// а облако Telegram приватное: оно видит только твои данные и ничьи больше.
-const RANK_NOTE =
-  'Считается по заработанному за всё время. Общий рейтинг появится, когда у игры ' +
-  'будет общее хранилище — облако Telegram приватное и чужих результатов не видит.';
+const RANK_NOTE = {
+  'not-configured': 'Общий рейтинг ещё не подключён — пока здесь только твой результат.',
+  'no-telegram':    'Общий рейтинг работает только внутри Telegram: там игра знает, кто ты.',
+  'error':          'Сервер рейтинга не отвечает. Попробуй позже, на игру это не влияет.'
+};
+
+function rankBoard(p){
+  const st = Rating.state;
+  const mine = `<div class="rankrow me">
+      <span class="place">${(st.me && st.me.place) || '—'}</span>
+      <span class="who">Ты · ${p.name}</span>
+      <span class="score">${fmt(S.stats.earnedTotal)}$</span>
+    </div>`;
+
+  if (st.status !== 'ok')
+    return mine + `<div class="capnote">${RANK_NOTE[st.status] || RANK_NOTE['error']}</div>`;
+
+  const meId = st.me && st.me.id;
+  const rows = st.top.map(r => `
+    <div class="rankrow${r.id === meId ? ' me' : ''}">
+      <span class="place">${r.place}</span>
+      <span class="who">${escapeText(r.name)}</span>
+      <span class="score">${fmt(r.score)}$</span>
+    </div>`).join('');
+
+  // своя строка отдельно, если в двадцатку не попал
+  const outside = meId && !st.top.some(r => r.id === meId) ? mine : '';
+  return rows + outside +
+    `<div class="capnote">Всего игроков: ${st.total}. Считается по заработанному за всё время.</div>`;
+}
+
+/* Имена приходят с сервера, то есть их пишут другие люди. В разметку они
+   попадают только через это — иначе кто-нибудь назовётся тегом. */
+function escapeText(s){
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
 
 /* ---------- перерождение ---------- */
 async function doRebirth(){
