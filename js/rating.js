@@ -8,7 +8,7 @@
 
 // Адрес воркера. Пустая строка = рейтинг выключен.
 // Заполняется после деплоя, см. server/README.md
-const RATING_URL = '';
+const RATING_URL = 'https://pod-solncem-rating.sedin1nikolay.workers.dev';
 
 const Rating = (() => {
   const EVERY = 60000;      // не чаще раза в минуту: результат меняется медленно

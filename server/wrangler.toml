@@ -6,9 +6,8 @@ compatibility_date = "2026-09-01"
 [vars]
 ALLOW_ORIGIN = "https://lemonslice2.github.io"
 
-# База заполняется командой из README: wrangler d1 create pod-solncem-rating
-# и полученный database_id вписывается сюда.
+# База создана командой wrangler d1 create pod-solncem-rating.
 [[d1_databases]]
 binding = "DB"
 database_name = "pod-solncem-rating"
-database_id = "ВПИШИ_СЮДА_ID_ИЗ_wrangler_d1_create"
+database_id = "f736ff46-bc96-4af6-bfb5-68dd5b3e3fb0"

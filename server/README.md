@@ -21,21 +21,10 @@ wrangler login
 
 Откроется браузер, там подтвердишь доступ.
 
-### 2. Завести базу
+### 2. Завести базу — сделано
 
-```
-cd server
-wrangler d1 create pod-solncem-rating
-```
-
-Команда напечатает `database_id`. Вписать его в `wrangler.toml` вместо
-`ВПИШИ_СЮДА_ID_ИЗ_wrangler_d1_create`.
-
-Создать таблицу:
-
-```
-wrangler d1 execute pod-solncem-rating --remote --file=schema.sql
-```
+База `pod-solncem-rating` создана, её id уже вписан в `wrangler.toml`,
+таблица создана. Повторять не нужно.
 
 ### 3. Положить токен бота в секрет
 
@@ -50,23 +39,20 @@ wrangler secret put BOT_TOKEN
 убедиться, что запрос пришёл от конкретного аккаунта Telegram, а не от кого
 угодно с curl.
 
-### 4. Выложить
+### 4. Выложить — сделано
+
+Адрес: `https://pod-solncem-rating.sedin1nikolay.workers.dev`
+Он уже вписан в `js/rating.js`.
+
+Обновить сервер после правок в `server/src/worker.js`:
 
 ```
+cd server
 wrangler deploy
 ```
 
-Напечатает адрес вида `https://pod-solncem-rating.<твой>.workers.dev`.
-
-### 5. Вписать адрес в игру
-
-В `js/rating.js`, первая значимая строка:
-
-```js
-const RATING_URL = 'https://pod-solncem-rating.твой.workers.dev';
-```
-
-Потом обязательно `node tools/stamp.js`, коммит и push.
+Запускать из папки `server`, иначе wrangler не найдёт настройки и начнёт
+спрашивать про какие-то asset files — это верный признак, что ты не там.
 
 ## Проверить, что работает
 
