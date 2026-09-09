@@ -32,16 +32,6 @@ function enter(saved){
    подтягивается следом, и если там прогресс дальше — спрашиваем.
    Молча подменять забег нельзя: человек мог только что играть здесь. */
 
-function whenAgo(ts){
-  const min = Math.max(0, Math.round((Date.now() - ts) / 60000));
-  if (min < 1)   return 'только что';
-  if (min < 60)  return min + ' ' + plural(min, 'минуту', 'минуты', 'минут') + ' назад';
-  const h = Math.round(min / 60);
-  if (h < 24)    return h + ' ' + plural(h, 'час', 'часа', 'часов') + ' назад';
-  const d = Math.round(h / 24);
-  return d + ' ' + plural(d, 'день', 'дня', 'дней') + ' назад';
-}
-
 function describeSave(st){
   if (!st) return 'пусто';
   const p = PATHS.find(x => x.id === st.path);
@@ -53,14 +43,13 @@ function describeSave(st){
   ].join(' · ');
 }
 
-async function syncWithCloud(){
-  if (!Store.hasRemote) return;
+async function syncWithCloud(localTs){
+  if (!Store.hasRemote) return;                 // без облака замок ни на что не влияет
   const cloud = await Store.pull();
-  const localTs = (S && S.ts) || 0;
 
   // Облако пустое или отстало — значит здешний забег и есть свежий
   if (!cloud || !cloud.ts || cloud.ts <= localTs + 5000){
-    save(); Store.pushNow();
+    Store.allowPush(); save(); Store.pushNow();
     return;
   }
 
@@ -70,15 +59,24 @@ async function syncWithCloud(){
     `<br>Перейти к облачному? Здешний забег пропадёт.`,
     'Перейти');
 
-  if (!go){ save(); Store.pushNow(); return; }   // остаёмся на своём и перебиваем облако
+  if (!go){                                     // остаёмся на своём и перебиваем облако
+    Store.allowPush(); save(); Store.pushNow();
+    return;
+  }
+  Store.allowPush();
   Store.save(cloud);
   enter(cloud);
 }
 
 function boot(){
-  enter(Store.load());
+  const saved = Store.load();
+  // Метку берём до enter(): он вызывает start(), тот — save(), и S.ts
+  // становится «сейчас». Сравнивать с облаком после этого бессмысленно,
+  // любой чужой сейв окажется старше и локальный молча его перебьёт.
+  const localTs = (saved && saved.ts) || 0;
+  enter(saved);
   requestAnimationFrame(loop);
-  syncWithCloud();
+  syncWithCloud(localTs);
 }
 
 setInterval(save, 5000);

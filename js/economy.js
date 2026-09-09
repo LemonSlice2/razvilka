@@ -179,6 +179,17 @@ function fmt(n){
   while (n >= 1000 && i < UNITS.length - 1){ n /= 1000; i++; }
   return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + UNITS[i];
 }
+// Насколько давно это было, словами. Живёт рядом с fmt и plural,
+// потому что зовут его и из ui.js, и из boot.js.
+function whenAgo(ts){
+  const min = Math.max(0, Math.round((Date.now() - ts) / 60000));
+  if (min < 1)   return 'только что';
+  if (min < 60)  return min + ' ' + plural(min, 'минуту', 'минуты', 'минут') + ' назад';
+  const h = Math.round(min / 60);
+  if (h < 24)    return h + ' ' + plural(h, 'час', 'часа', 'часов') + ' назад';
+  const d = Math.round(h / 24);
+  return d + ' ' + plural(d, 'день', 'дня', 'дней') + ' назад';
+}
 function plural(n, one, few, many){
   const a = Math.abs(n) % 100, b = a % 10;
   if (a > 10 && a < 20) return many;

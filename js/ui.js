@@ -307,6 +307,7 @@ function renderCapital(){
          <div class="box"><div class="k">Вложено в развитие</div><div class="v" id="capLifeSpent"></div></div>
        </div>
        <div class="capnote" id="capRuns"></div>
+       <div class="capnote" id="capCloud"></div>
      </div>
      <div class="capgroup">
        <h3>Этот забег</h3>
@@ -344,6 +345,13 @@ function drawCapitalTotals(){
     `${S.stats.paths.length} ${plural(S.stats.paths.length,'путь','пути','путей')} из ${PATHS.length}`;
   $('capRun').textContent =
     `Заработано ${fmt(S.totalEarned)}$ · в кармане ${fmt(S.money)}$`;
+
+  const c = Store.cloudInfo();
+  $('capCloud').textContent = !c.on
+    ? 'Облако Telegram недоступно — прогресс только на этом устройстве'
+    : c.lastPush
+      ? 'Облако Telegram: отправлено ' + whenAgo(c.lastPush)
+      : 'Облако Telegram: подключено, ещё не отправляли';
 }
 
 /* ---------- перерождение ---------- */

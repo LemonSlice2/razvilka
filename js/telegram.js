@@ -36,7 +36,11 @@ const TG = (() => {
 
    Store остаётся единственным местом, знающим, где живут данные: здесь только
    переходник к нему. */
-if (TG && TG.CloudStorage && TG.isVersionAtLeast && TG.isVersionAtLeast('6.9')){
+// Проверяем наличие методов, а не номер версии: isVersionAtLeast на части
+// клиентов отвечает «нет» там, где облако на самом деле работает. Если методы
+// есть, но клиент их не тянет, вызов просто не ответит — в Store на это стоит
+// таймаут, и игра продолжит жить на локальном хранилище.
+if (TG && TG.CloudStorage && typeof TG.CloudStorage.getItem === 'function'){
   Store.useRemote({
     get(key, cb){ TG.CloudStorage.getItem(key, cb); },
     set(key, value){ TG.CloudStorage.setItem(key, value, () => {}); },

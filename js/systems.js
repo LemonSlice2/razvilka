@@ -19,7 +19,11 @@ const Store = (() => {
   const PUSH_EVERY = 25000;        // не чаще раза в 25 секунд
   const REMOTE_TIMEOUT = 6000;     // столько ждём ответа, дальше играем от локального
   const VALUE_LIMIT = 4096;        // жёсткий предел Telegram на длину значения
-  let remote = null, pending = null, pushTimer = null, lastPush = 0;
+  // Отправка заперта до тех пор, пока не сверились с облаком. Иначе локальный
+  // сейв улетает наверх прямо на запуске и затирает прогресс другого устройства
+  // ещё до того, как игрок увидел вопрос. Копится только pending.
+  let pushAllowed = false;
+  let remote = null, pending = null, pushTimer = null, lastPush = 0, pulledAt = 0;
 
   function push(json){
     if (!remote) return;
@@ -36,7 +40,7 @@ const Store = (() => {
   function schedulePush(json){
     if (!remote) return;
     pending = json;
-    if (pushTimer) return;
+    if (!pushAllowed || pushTimer) return;
     const wait = Math.max(0, PUSH_EVERY - (Date.now() - lastPush));
     pushTimer = setTimeout(() => {
       pushTimer = null;
@@ -88,6 +92,7 @@ const Store = (() => {
         setTimeout(() => finish(null), REMOTE_TIMEOUT);
         try {
           remote.get(KEY, (err, value) => {
+            pulledAt = Date.now();
             if (err || !value) return finish(null);
             try { finish(JSON.parse(value)); } catch(e){ finish(null); }
           });
@@ -95,8 +100,21 @@ const Store = (() => {
       });
     },
 
+    // Открыть отправку. Зовётся из сверки с облаком, когда решение принято.
+    allowPush(){
+      if (pushAllowed) return;
+      pushAllowed = true;
+      if (pending) schedulePush(pending);
+    },
+
     // Немедленная отправка: при уходе со страницы ждать нечего.
-    pushNow(){ if (pending){ push(pending); pending = null; } }
+    // До сверки молчим — потерять одно сохранение не страшно, затереть чужой
+    // прогресс страшно.
+    pushNow(){ if (pushAllowed && pending){ push(pending); pending = null; } },
+
+    // Для строчки состояния на вкладке «Капитал»: без неё непонятно,
+    // работает облако или молча выключено, и это уже один раз стоило времени.
+    cloudInfo(){ return { on: !!remote, lastPush, pulledAt }; }
   };
 })();
 
