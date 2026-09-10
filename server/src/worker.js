@@ -195,9 +195,13 @@ const json = (env, data, status = 200) => new Response(JSON.stringify(data), {
 
 async function topRows(env, order){
   const byBp = order === 'bp';
+  // Наружу отдаём силу с надбавкой: игрок должен видеть то, чем дерётся.
   const { results } = await env.DB.prepare(
-    `SELECT id, name, score, runs, path, bp, power, health FROM players
-     ORDER BY ${byBp ? 'bp' : 'score'} DESC LIMIT ?1`
+    `SELECT id, name, score, runs, path, bp,
+            power + bonus_power   AS power,
+            health + bonus_health AS health,
+            bonus_power, bonus_health
+     FROM players ORDER BY ${byBp ? 'bp' : 'score'} DESC LIMIT ?1`
   ).bind(TOP_SIZE).all();
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM players').first('n');
   return { total: total || 0, top: (results || []).map((r, i) => ({ place: i + 1, ...r })) };
@@ -258,9 +262,13 @@ export default {
         'SELECT COUNT(*) + 1 AS p FROM players WHERE score > (SELECT score FROM players WHERE id = ?1)'
       ).bind(user.id).first('p');
 
-      const mine = await env.DB.prepare('SELECT bp FROM players WHERE id = ?1').bind(user.id).first();
+      const mine = await env.DB.prepare(
+        'SELECT bp, bonus_power, bonus_health FROM players WHERE id = ?1').bind(user.id).first();
       return json(env, { ...(await topRows(env, body.by)),
-                         me: { id: user.id, place: place || null, bp: mine ? mine.bp : 1000 } });
+                         me: { id: user.id, place: place || null,
+                               bp: mine ? mine.bp : 1000,
+                               bonusPower:  mine ? mine.bonus_power  : 0,
+                               bonusHealth: mine ? mine.bonus_health : 0 } });
     }
 
     if (url.pathname === '/fight' && request.method === 'POST'){
@@ -272,7 +280,10 @@ export default {
       if (!user || !user.id) return json(env, { error: 'подпись не сошлась' }, 403);
 
       const me = await env.DB.prepare(
-        'SELECT id, name, power, health, bp, last_fight FROM players WHERE id = ?1').bind(user.id).first();
+        `SELECT id, name, bp, last_fight,
+                power + bonus_power   AS power,
+                health + bonus_health AS health
+         FROM players WHERE id = ?1`).bind(user.id).first();
       if (!me) return json(env, { error: 'сначала поиграй' }, 400);
       if (me.power <= 0) return json(env, { error: 'нечем драться: прокачай хотя бы одну вещь' }, 400);
 
@@ -287,7 +298,10 @@ export default {
         return json(env, { error: 'выбери противника в таблице' }, 400);
 
       const enemy = await env.DB.prepare(
-        'SELECT id, name, power, health, bp FROM players WHERE id = ?1').bind(targetId).first();
+        `SELECT id, name, bp,
+                power + bonus_power   AS power,
+                health + bonus_health AS health
+         FROM players WHERE id = ?1`).bind(targetId).first();
       if (!enemy) return json(env, { error: 'такого игрока нет' }, 404);
 
       const r = resolveFight(me, enemy);

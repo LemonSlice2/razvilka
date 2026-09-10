@@ -226,6 +226,7 @@
   .pfacts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:18px}
   .pf{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
   .pf .v{font-size:16px;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+  .pf .v em{font-style:normal;font-size:10.5px;color:var(--legacy);letter-spacing:0}
   .pf .k{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.3}
 
   /* драка */

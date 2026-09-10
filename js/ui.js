@@ -382,9 +382,13 @@ function renderProfile(){
   const traits = (S.mastered || []).map(id => MASTERY[id]).filter(Boolean);
   const done = S.achieved.length;
 
+  // Надбавка от игры живёт на сервере и в вещах не отражается. Не показать её
+  // значило бы дать человеку «сила 0» при выигранных драках — выглядит как поломка.
+  const me = Rating.state.me || {};
+  const bp = me.bonusPower || 0, bh = me.bonusHealth || 0;
   const facts = [
-    [fmt(powerOf()), 'сила'],
-    [fmt(healthOf()), 'здоровье'],
+    [fmt(powerOf() + bp) + (bp ? ' <em>+дар</em>' : ''), 'сила'],
+    [fmt(healthOf() + bh) + (bh ? ' <em>+дар</em>' : ''), 'здоровье'],
     [combatRating(), 'боевой рейтинг'],
     [S.runs, plural(S.runs, 'перерождение', 'перерождения', 'перерождений')],
     ['×' + legacyMult().toFixed(2), 'влияние'],
