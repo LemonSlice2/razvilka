@@ -4,17 +4,21 @@ require('./sim.js').report(`
 
 console.log('=== ОТДАЧА ОТ СКОРОСТИ ТАПА (Улица, 10 минут) ===');
 /* Бонусы и развилки случайны, поэтому один прогон — шум. Усредняем. */
+const SEEDS = [11,22,33,44,55,66,77,88,99,111,222,333];
 function avg(n, opts, field){
   let s = 0;
-  for (let i = 0; i < n; i++){ const r = runOnce(opts); s += field ? r[field] : r.earned; }
+  for (let i = 0; i < n; i++){
+    const r = runOnce({ ...opts, seed: SEEDS[i % SEEDS.length] });
+    s += field ? r[field] : r.earned;
+  }
   return s / n;
 }
 
 const rates = [1, 2, 3, 3.33, 4, 5, 7, 10, 14];
-const byRate = rates.map(r => ({ earned: avg(6, { pathId:'street', tps:r, seconds:600 }) }));
+const byRate = rates.map(r => ({ earned: avg(12, { pathId:'street', tps:r, seconds:600 }) }));
 console.log(pad('тапов/сек',13), rates.map(r => rpad(r, 9)).join(''));
 console.log(pad('заработок',13), byRate.map(r => rpad(fmt(r.earned), 9)).join(''));
-console.log(pad('',13), '(среднее по шести прогонам)');
+console.log(pad('',13), '(среднее по двенадцати прогонам на одинаковых зёрнах)');
 let mono = true;
 for (let i = 1; i < byRate.length; i++) if (byRate[i].earned < byRate[i-1].earned * 0.9) mono = false;
 console.log(pad('',13), mono ? 'быстрее всегда лучше — провала нет'
@@ -26,8 +30,8 @@ console.log(pad('путь',10), pad('уклон',20), rpad('1-я покупка'
             rpad('очков',7), rpad('заработано',12), rpad('способность',12));
 const spread = [];
 for (const p of PATHS){
-  const e = avg(6, { pathId:p.id, seconds:900 });
-  const pts = avg(6, { pathId:p.id, seconds:900 }, 'points');
+  const e = avg(12, { pathId:p.id, seconds:900 });
+  const pts = avg(12, { pathId:p.id, seconds:900 }, 'points');
   const r = runOnce({ pathId:p.id, seconds:900 });
   spread.push(e);
   console.log(pad(p.name,10), pad('тап x'+p.bias.tap+'  доход x'+p.bias.income,20),
@@ -46,9 +50,9 @@ const variants = [
   ['без развилок',        { answerEvents: false }],
   ['только тапы и покупки',{ catchBonus:0, useAbility:false, answerEvents:false }]
 ];
-const full = avg(6, base);
+const full = avg(12, base);
 for (const [label, over] of variants){
-  const e = avg(6, { ...base, ...over });
+  const e = avg(12, { ...base, ...over });
   const d = Math.round((e/full - 1) * 100);
   console.log(pad(label,24), rpad(fmt(e)+'$',12),
               rpad(label === 'всё включено' ? '' : (d >= 0 ? '+' : '') + d + '%', 8));

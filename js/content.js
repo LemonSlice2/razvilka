@@ -128,8 +128,8 @@ const ABILITIES = {
     desc:'Разовый куш. Сколько выйдет — как повезёт',
     run(){
       // разброс от 10 до 90 секунд дохода: путь риска и должен ощущаться как риск
-      const min = perk('navodka') ? 55 : 10;
-      const seconds = min + Math.random() * (90 - min);
+      const min = perk('navodka') ? 60 : 20;
+      const seconds = min + Math.random() * (110 - min);
       const amount = Math.max(perSecond() * seconds, perTap() * seconds * 0.8);
       earn(amount);
       return (seconds > 65 ? 'Взял крупно: ' : seconds < 25 ? 'Едва ушёл: ' : 'Вышло: ') + fmt(amount) + '$';
@@ -144,22 +144,28 @@ const ABILITIES = {
   },
   science: {
     name:'Озарение', cooldown:85,
-    desc:'Концентрация перестаёт тратиться',
-    run(){ const sec = perk('sinergiya') ? 50 : 20;
+    desc:'Ненадолго сходится всё сразу',
+    // Раньше давала только «концентрация не тратится». На нормальной скорости
+    // тапа концентрация и так полная, поэтому способность стоила почти ноль:
+    // стенд намерил ×0.6, то есть пользоваться ей было незачем.
+    run(){ const sec = perk('sinergiya') ? 36 : 20;
+           addBuff('tap', 1.8, sec); addBuff('income', 1.5, sec);
            addBuff('nofocus', 1, sec); S.focus = FOCUS_MAX;
-           return `Полная отдача ${sec} секунд, тапай без передышки`; }
+           return `${sec} секунд всё сходится: тап ×1.8, доход ×1.5, концентрация не тратится`; }
   },
   politics: {
     name:'Указ', cooldown:95,
     desc:'Резко разгоняет пассивный доход',
-    run(){ const m = perk('vertikal') ? 12 : 6;
-           addBuff('income', m, 35);
-           return `Доход ×${m} на 35 секунд`; }
+    // Было ×6 на 35 секунд при откате 95 — доход стоял разогнанным треть
+    // времени, и путь обгонял остальные на порядок.
+    run(){ const m = perk('vertikal') ? 8 : 4;
+           addBuff('income', m, 25);
+           return `Доход ×${m} на 25 секунд`; }
   },
   order: {
     name:'Ритуал', cooldown:75,
     desc:'Заряжает следующие тапы',
-    run(){ const n = perk('oderzhimost') ? 45 : 15, m = perk('relikvia') ? 20 : 10;
+    run(){ const n = perk('oderzhimost') ? 28 : 20, m = perk('relikvia') ? 9 : 7;
            addCharges(n, m);
            return `Следующие ${n} тапов бьют в ${m} раз сильнее`; }
   }
@@ -172,7 +178,7 @@ const ABILITIES = {
    ============================================================ */
 const PERKS = {
   street: [
-    { id:'navodka',    name:'Наводка',      cost:25000,  desc:'Налёт больше не проваливается — минимум 55 секунд дохода' },
+    { id:'navodka',    name:'Наводка',      cost:25000,  desc:'Налёт больше не проваливается — минимум 60 секунд дохода' },
     { id:'krysha',     name:'Крыша',        cost:150000, desc:'Каждый седьмой тап примерно бьёт в 8 раз сильнее' },
     { id:'avtoritet',  name:'Авторитет',    cost:800000, desc:'Откат Налёта вдвое короче' }
   ],
@@ -184,16 +190,16 @@ const PERKS = {
   science: [
     { id:'ergonomika', name:'Эргономика',   cost:25000,  desc:'Концентрация восстанавливается вдвое быстрее' },
     { id:'avtomat',    name:'Автоматизация',cost:150000, desc:'Три тапа в секунду происходят сами' },
-    { id:'sinergiya',  name:'Синергия',     cost:800000, desc:'Озарение длится 50 секунд вместо 20' }
+    { id:'sinergiya',  name:'Синергия',     cost:800000, desc:'Озарение длится 36 секунд вместо 20' }
   ],
   politics: [
     { id:'lobbi',      name:'Лобби',        cost:25000,  desc:'Бонусы появляются вдвое чаще' },
     { id:'apparat',    name:'Аппарат',      cost:150000, desc:'Бонусы ждут нажатия 30 секунд вместо 12' },
-    { id:'vertikal',   name:'Вертикаль',    cost:800000, desc:'Указ разгоняет доход в 12 раз вместо 6' }
+    { id:'vertikal',   name:'Вертикаль',    cost:800000, desc:'Указ разгоняет доход в 8 раз вместо 4' }
   ],
   order: [
-    { id:'oderzhimost',name:'Одержимость',  cost:25000,  desc:'Ритуал заряжает 45 тапов вместо 15' },
-    { id:'relikvia',   name:'Реликвия',     cost:150000, desc:'Заряженный тап бьёт в 20 раз сильнее вместо 10' },
+    { id:'oderzhimost',name:'Одержимость',  cost:25000,  desc:'Ритуал заряжает 28 тапов вместо 20' },
+    { id:'relikvia',   name:'Реликвия',     cost:150000, desc:'Заряженный тап бьёт в 9 раз сильнее вместо 7' },
     { id:'videnie',    name:'Видение',      cost:800000, desc:'Всё, что дают бонусы, удваивается' }
   ]
 };

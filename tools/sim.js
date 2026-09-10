@@ -22,6 +22,20 @@ const fs = require('fs'), vm = require('vm'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 
 const BROWSER = `
+/* ---------- воспроизводимая случайность ----------
+   Бонусы и развилки случайны, и разброс между прогонами доходит до двух раз.
+   Сравнивать два набора чисел на разных случайностях бессмысленно: шум
+   перекрывает разницу. Поэтому Math.random здесь управляемый — два варианта
+   можно прогнать на одной и той же последовательности событий. */
+let __seed = 1;
+Math.random = function(){
+  __seed |= 0; __seed = __seed + 0x6D2B79F5 | 0;
+  let t = Math.imul(__seed ^ __seed >>> 15, 1 | __seed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+};
+function seed(n){ __seed = n | 0; }
+
 /* ---------- виртуальные часы ---------- */
 var __clock = 1700000000000;
 const __RealDate = Date;
@@ -91,6 +105,7 @@ function buyGearGreedy(){
 function runOnce(opts){
   const o = { ...DEFAULT_PLAYER, ...(opts || {}) };
   const { carry = null, pathId = 'street', seconds = 900 } = o;
+  if (o.seed !== undefined) seed(o.seed);      // одинаковые события для сравнения
 
   S = freshRun(pathId, carry);
   buffs = [];
