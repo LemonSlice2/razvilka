@@ -141,6 +141,7 @@ function start(state, offlineEarned){
   $('ability').classList.toggle('hidden', !a);
   if (a){ $('abilityName').textContent = a.name; $('abilityDesc').textContent = a.desc; }
 
+  Sound.resetMelody();
   buildShop();
   buildPerks();
   showPane('taps');
@@ -822,7 +823,7 @@ function doTap(x, y){
   spendCharge();
 
   // высота щелчка падает вместе с концентрацией — слышно, когда пора передохнуть
-  Sound.tap(S.focus / FOCUS_MAX);
+  Sound.tap(S.focus / FOCUS_MAX, path().melody);
   haptic(8);
   S.stats.taps++;
 

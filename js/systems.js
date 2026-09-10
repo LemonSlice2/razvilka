@@ -130,8 +130,23 @@ const Settings = {
 };
 Settings.load();
 
+
+/* ---------- ноты ----------
+   Имя ноты в частоту. A4 = 440 Гц, дальше по полутонам.
+   Пауза '-' возвращает 0 — такой тап просто молчит, и это часть рисунка. */
+const NOTE_BASE = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+function noteFreq(name){
+  if (name === '-') return 0;
+  const m = /^([A-G])(#|b)?(\d)$/.exec(name);
+  if (!m) return 0;
+  let semi = NOTE_BASE[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
+  const midi = (Number(m[3]) + 1) * 12 + semi;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
 const Sound = (() => {
   let ctx = null;
+  let melodyAt = 0, lastTap = 0;
   function ensure(){
     // AudioContext можно создать только в ответ на действие человека
     if (!ctx){ try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; } }
@@ -151,7 +166,26 @@ const Sound = (() => {
   }
   return {
     wake: ensure,
-    tap(pitch){ tone(220 + pitch * 260, .07, 'triangle', .05); },
+    /* Каждый тап — следующая нота темы пути. Пауза дольше полутора секунд
+       начинает фразу заново, иначе мелодия никогда не звучала бы с начала.
+
+       Усталость слышна: на выжатой концентрации тема уходит октавой ниже
+       и звучит тише. Раньше это делала плавно падающая высота щелчка —
+       обратную связь нельзя было потерять вместе с ней. */
+    tap(focus, melody){
+      if (!melody || !melody.length) return tone(220 + focus * 260, .07, 'triangle', .05);
+      const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+      if (now - lastTap > 1500) melodyAt = 0;
+      lastTap = now;
+
+      const freq = noteFreq(melody[melodyAt % melody.length]);
+      melodyAt++;
+      if (!freq) return;                       // пауза в теме
+
+      const tired = focus < 0.35;
+      tone(tired ? freq / 2 : freq, .16, 'square', .035 * (0.5 + 0.5 * focus));
+    },
+    resetMelody(){ melodyAt = 0; },
     buy(){ tone(520, .09, 'sine', .07); setTimeout(() => tone(780, .12, 'sine', .06), 60); },
     bonus(){ [660, 880, 1170].forEach((f, i) => setTimeout(() => tone(f, .18, 'sine', .07), i * 70)); },
     rebirth(){ [330, 440, 550, 660].forEach((f, i) => setTimeout(() => tone(f, .35, 'sine', .07), i * 110)); }
