@@ -282,8 +282,12 @@
   .capline .give{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:13px}
   .capline.tap .give{color:var(--money)}
   .capline.inc .give{color:var(--income)}
-  .capline.perk{border-color:var(--accent)}
-  .capline.perk .give{color:var(--accent);font-size:12.5px}
+  /* У перка в правой колонке не число, а целое предложение. Общий для строк
+     white-space:nowrap не давал ему переноситься, и текст наезжал на название.
+     Поэтому у перка название и описание встают друг под другом. */
+  .capline.perk{border-color:var(--accent);flex-direction:column;align-items:flex-start;gap:3px}
+  .capline.perk .n{flex:none}
+  .capline.perk .give{color:var(--accent);font-size:12.5px;white-space:normal;line-height:1.4}
   .capempty{color:var(--muted);font-size:13.5px;padding:10px 0 4px;line-height:1.5}
 
   /* палата влияния */
