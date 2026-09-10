@@ -264,6 +264,17 @@ function startUpgrade(id){
   return true;
 }
 
+/* Через сколько секунд способность будет готова. Живёт здесь, а не в
+   обработчике, чтобы стенд считал тот же откат, что и игра. */
+function abilityCooldownSec(){
+  const a = path().ability;
+  if (!a) return Infinity;
+  return a.cooldown
+       * (perk('avtoritet') ? 0.5 : 1)
+       * (1 - metaLevel('svyazi') * 0.10)
+       * modOf('ability');
+}
+
 function earn(amount){
   S.money += amount; S.totalEarned += amount;
   S.stats.earnedTotal += amount;

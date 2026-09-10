@@ -181,6 +181,23 @@ const BONUS_TYPES = [
              addBuff('income', 5, 30 * d); return '×5 к доходу'; } }
 ];
 
+/* Через сколько секунд придёт следующий бонус или следующая развилка.
+   Обе функции здесь, а не в обработчиках: стенд зовёт их же, поэтому
+   расписание в симуляции совпадает с игрой по определению. */
+function bonusDelaySec(first){
+  const [a, b] = first ? BONUS_FIRST : BONUS_EVERY;
+  const speed = modOf('bonus')
+              * (perk('lobbi') ? 0.5 : 1)
+              * (1 - metaLevel('chutyo') * 0.12)
+              * (mastered('politics') ? 0.8 : 1);
+  return (a + Math.random() * (b - a)) * speed;
+}
+
+function eventDelaySec(first){
+  const [a, b] = first ? EVENT_FIRST : EVENT_EVERY;
+  return a + Math.random() * (b - a);
+}
+
 const BONUS_FIRST   = [40, 80];    // когда может появиться первый, секунд
 const BONUS_EVERY   = [95, 190];   // интервал между следующими
 const BONUS_LIFE    = 12;          // сколько секунд ждёт нажатия

@@ -691,8 +691,7 @@ let pendingEvent = null, eventTimer = null;
 
 function scheduleEvent(first){
   clearTimeout(eventTimer);
-  const [a, b] = first ? EVENT_FIRST : EVENT_EVERY;
-  eventTimer = setTimeout(spawnEvent, (a + Math.random() * (b - a)) * 1000);
+  eventTimer = setTimeout(spawnEvent, eventDelaySec(first) * 1000);
 }
 
 function spawnEvent(){
@@ -741,8 +740,7 @@ function useAbility(){
   if (!a) return;
   const result = a.run();
   if (mastered('order') && charges.left <= 0) addCharges(6, 5);
-  const cd = a.cooldown * (perk('avtoritet') ? 0.5 : 1) * (1 - metaLevel('svyazi') * 0.10)
-           * modOf('ability');
+  const cd = abilityCooldownSec();
   abilityReadyAt = Date.now() + cd * 1000;
   abilityCooldown = cd;
   Sound.bonus(); haptic([14, 45, 22]);
@@ -764,12 +762,7 @@ let bonusTimer = null;
 
 function scheduleBonus(first){
   clearTimeout(bonusTimer);
-  const [a, b] = first ? BONUS_FIRST : BONUS_EVERY;
-  const speed = modOf('bonus') * (perk('lobbi') ? 0.5 : 1)
-              * (1 - metaLevel('chutyo') * 0.12)
-              * (mastered('politics') ? 0.8 : 1);
-  const delay = (a + Math.random() * (b - a)) * 1000 * speed;
-  bonusTimer = setTimeout(spawnBonus, delay);
+  bonusTimer = setTimeout(spawnBonus, bonusDelaySec(first) * 1000);
 }
 
 function spawnBonus(){
