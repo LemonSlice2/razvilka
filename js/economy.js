@@ -71,6 +71,8 @@ function freshRun(pathId, keep){
   const state = {
     ...c,
     path: pathId, money: 0, owned: {}, perks: [], totalEarned: 0,
+    mods: {},                       // уклады забега, перерождение их стирает
+    seen: [],                       // какие развилки уже выпадали в этом забеге
     focus: FOCUS_MAX, ts: Date.now()
   };
   const saved = S; S = state;                     // чтобы metaLevel читал новое состояние
@@ -89,7 +91,7 @@ function unlockedUpgrades(){
 }
 function owned(id){ return S.owned[id] || 0; }
 function costMult(){
-  return buffMult('cost')
+  return buffMult('cost') * modOf('cost')
        * (perk('postavshik') ? 0.85 : 1)
        * (mastered('business') ? 0.92 : 1);
 }
@@ -137,12 +139,12 @@ function perTap(){
   }
   return flat * mult * legacyMult() * achMult()
        * (1 + metaLevel('hvatka') * 0.20)
-       * buffMult('tap') * chargeMult();
+       * buffMult('tap') * chargeMult() * modOf('tap');
 }
 function perSecond(){
   let sum = 0;
   for (const u of path().upgrades) if (u.type === 'income') sum += u.value * owned(u.id);
-  return sum * legacyMult() * achMult() * buffMult('income');
+  return sum * legacyMult() * achMult() * buffMult('income') * modOf('income');
 }
 function focusMult(){
   if (buffActive('nofocus')) return 1;
@@ -155,11 +157,50 @@ function focusMult(){
 // встаёт на равновесие: быстрее — всегда лучше, но с сильным затуханием.
 function spendFocus(){
   if (buffActive('nofocus')) return;
-  S.focus = Math.max(0, S.focus - FOCUS_COST * (S.focus / FOCUS_MAX));
+  S.focus = Math.max(0, S.focus - FOCUS_COST * modOf('focus') * (S.focus / FOCUS_MAX));
 }
 function regenFocus(dt){
   const regen = FOCUS_REGEN * (perk('ergonomika') ? 2 : 1) * (1 + metaLevel('golova') * 0.25);
   S.focus = Math.min(FOCUS_MAX, S.focus + regen * dt);
+}
+
+
+/* ============================================================
+   УКЛАДЫ — изменения правил на весь забег.
+   Развилка может не просто дать множитель на минуту, а поменять условия
+   до конца забега: сильнее тап ценой концентрации, дешевле развитие ценой
+   дохода. Это то, ради чего игра называется так, как называется.
+
+   От усилений отличаются двумя вещами: живут до перерождения и лежат
+   в состоянии, поэтому переживают перезагрузку страницы. Усиления живут
+   в оперативной памяти и считаются секундами.
+
+   Виды: tap, income, focus (расход концентрации), cost (цены развития),
+   ability (откат способности), bonus (как часто приходят бонусы).
+   ============================================================ */
+function modOf(kind){ return (S && S.mods && S.mods[kind]) || 1; }
+
+function setMod(kind, mult){
+  if (!S.mods) S.mods = {};
+  S.mods[kind] = (S.mods[kind] || 1) * mult;
+}
+
+/* Что показать игроку про выбранный уклад. Порядок фиксированный,
+   чтобы строка не прыгала от забега к забегу. */
+const MOD_NAMES = [
+  ['tap',     'тап'],
+  ['income',  'доход'],
+  ['cost',    'цены'],
+  ['focus',   'расход концентрации'],
+  ['ability', 'откат способности'],
+  ['bonus',   'интервал бонусов']
+];
+
+function modList(){
+  if (!S || !S.mods) return [];
+  return MOD_NAMES
+    .filter(([k]) => S.mods[k] && S.mods[k] !== 1)
+    .map(([k, name]) => ({ kind: k, name, mult: S.mods[k] }));
 }
 
 /* ============================================================

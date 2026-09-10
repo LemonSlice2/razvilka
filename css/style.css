@@ -302,6 +302,9 @@
   #eventcard:active{background:var(--surface-2)}
   #eventcard .t{flex:1}
   #eventcard .t .h{font-size:15px;font-family:var(--font-serif);color:var(--money)}
+  #eventcard.lasting{border-color:var(--legacy)}
+  #eventcard.lasting .t .h,
+  #eventcard.lasting .go{color:var(--legacy)}
   #eventcard .t .s{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
   #eventcard .go{font-size:13px;color:var(--money);white-space:nowrap}
   #modal .row.two button{flex:1}
@@ -390,6 +393,8 @@
   #buffline{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;min-height:0}
   .buff{background:var(--surface-2);border:1px solid var(--money);border-radius:7px;
         padding:4px 9px;font-size:12px;color:var(--money);font-variant-numeric:tabular-nums}
+  /* уклад — не временное усиление, а выбранное правило до конца забега */
+  .buff.mod{border-color:var(--legacy);color:var(--legacy)}
 
   /* всплывающий бонус */
   .bonus{position:fixed;width:64px;height:64px;border-radius:50%;border:none;padding:0;cursor:pointer;

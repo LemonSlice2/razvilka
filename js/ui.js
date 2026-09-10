@@ -699,8 +699,20 @@ function spawnEvent(){
   if (!S || !S.path || pendingEvent){ scheduleEvent(false); return; }
   const pool = EVENTS[S.path] || [];
   if (!pool.length) return;
-  pendingEvent = pool[Math.floor(Math.random() * pool.length)];
+
+  // Одна и та же развилка дважды за забег обесценивает их все. Когда новые
+  // кончились — начинаем круг заново, но это уже поздняя стадия забега.
+  if (!S.seen) S.seen = [];
+  let fresh = pool.filter((_, i) => !S.seen.includes(i));
+  if (!fresh.length){ S.seen = []; fresh = pool; }
+
+  const pick = fresh[Math.floor(Math.random() * fresh.length)];
+  S.seen.push(pool.indexOf(pick));
+  pendingEvent = pick;
   $('eventHint').textContent = pendingEvent.text;
+  $('eventcard').classList.toggle('lasting', !!pendingEvent.lasting);
+  $('eventcard').querySelector('.h').textContent =
+    pendingEvent.lasting ? 'Развилка · на весь забег' : 'Развилка';
   $('eventcard').classList.remove('hidden');
   Sound.bonus(); haptic([10, 60, 10]);
 }
@@ -708,7 +720,10 @@ function spawnEvent(){
 async function openEvent(){
   if (!pendingEvent) return;
   const ev = pendingEvent;
-  const pick = await choose('Развилка', ev.text, ev.a.label, ev.b.label);
+  const warn = ev.lasting
+    ? '<br><br><b>Решение действует до конца забега.</b> Перерождение его снимет.'
+    : '';
+  const pick = await choose('Развилка', ev.text + warn, ev.a.label, ev.b.label);
   if (pick === null) return;                    // передумал — карточка остаётся
   pendingEvent = null;
   $('eventcard').classList.add('hidden');
@@ -726,7 +741,8 @@ function useAbility(){
   if (!a) return;
   const result = a.run();
   if (mastered('order') && charges.left <= 0) addCharges(6, 5);
-  const cd = a.cooldown * (perk('avtoritet') ? 0.5 : 1) * (1 - metaLevel('svyazi') * 0.10);
+  const cd = a.cooldown * (perk('avtoritet') ? 0.5 : 1) * (1 - metaLevel('svyazi') * 0.10)
+           * modOf('ability');
   abilityReadyAt = Date.now() + cd * 1000;
   abilityCooldown = cd;
   Sound.bonus(); haptic([14, 45, 22]);
@@ -749,7 +765,7 @@ let bonusTimer = null;
 function scheduleBonus(first){
   clearTimeout(bonusTimer);
   const [a, b] = first ? BONUS_FIRST : BONUS_EVERY;
-  const speed = (perk('lobbi') ? 0.5 : 1)
+  const speed = modOf('bonus') * (perk('lobbi') ? 0.5 : 1)
               * (1 - metaLevel('chutyo') * 0.12)
               * (mastered('politics') ? 0.8 : 1);
   const delay = (a + Math.random() * (b - a)) * 1000 * speed;
@@ -950,6 +966,11 @@ function draw(){
   if (charges.left > 0){
     bl.innerHTML += `<span class="buff">×${charges.mult} тап · ${charges.left} ${plural(charges.left,'заряд','заряда','зарядов')}</span>`;
   }
+
+  // Уклады — то, что игрок сам выбрал на развилке. Без напоминания он через
+  // десять минут не поймёт, почему концентрация горит вдвое быстрее.
+  for (const m of modList())
+    bl.innerHTML += `<span class="buff mod">×${m.mult.toFixed(2).replace(/0+$/,'').replace(/\.$/,'')} ${m.name}</span>`;
 
   // прогресс до следующего очка влияния
   const have = legacyPoints(S.totalEarned);
