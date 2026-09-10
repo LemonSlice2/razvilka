@@ -72,6 +72,7 @@ function freshRun(pathId, keep){
     ...c,
     path: pathId, money: 0, owned: {}, perks: [], totalEarned: 0,
     mods: {},                       // уклады забега, перерождение их стирает
+    grown: {},                      // сколько ступеней выросло само
     seen: [],                       // какие развилки уже выпадали в этом забеге
     focus: FOCUS_MAX, ts: Date.now()
   };
@@ -89,17 +90,37 @@ function unlockedUpgrades(){
   const size = metaLevel('razmah');
   return path().upgrades.filter(u => u.unlock <= size);
 }
-function owned(id){ return S.owned[id] || 0; }
+/* Купленное и выросшее считаются раздельно.
+   Цену поднимает только купленное: иначе после сотни выросших Шестёрок
+   следующая стоила бы астрономически, и нижние ступени стало бы
+   невозможно докупать руками. На доход работают обе части. */
+function bought(id){ return S.owned[id] || 0; }
+function grown(id){ return Math.floor((S.grown && S.grown[id]) || 0); }
+function owned(id){ return bought(id) + grown(id); }
+
+/* Самопроизводство. Ступень прирастает долей от собственного количества,
+   поэтому растёт экспонентой, а не линейно — и это видно за один забег.
+   Растёт и то, что выросло само: иначе прирост быстро упёрся бы в потолок. */
+function tickProduction(dt){
+  if (!S.grown) S.grown = {};
+  for (const u of unlockedUpgrades()){
+    if (!u.grows) continue;
+    const n = owned(u.id);
+    if (!n) continue;
+    S.grown[u.id] = ((S.grown[u.id] || 0) + n * u.grows * dt);
+  }
+}
+
 function costMult(){
   return buffMult('cost') * modOf('cost')
        * (perk('postavshik') ? 0.85 : 1)
        * (mastered('business') ? 0.92 : 1);
 }
-function costOf(u){ return Math.floor(u.cost * Math.pow(u.growth, owned(u.id)) * costMult()); }
+function costOf(u){ return Math.floor(u.cost * Math.pow(u.growth, bought(u.id)) * costMult()); }
 
 /* Цена n штук подряд — сумма геометрической прогрессии, а не n × текущая цена. */
 function costOfMany(u, n){
-  const start = owned(u.id);
+  const start = bought(u.id);
   const room = u.max - start;
   n = Math.min(n, room);
   if (n <= 0) return { n:0, cost:Infinity };
@@ -110,7 +131,7 @@ function costOfMany(u, n){
 
 /* Сколько штук можно позволить прямо сейчас */
 function affordable(u){
-  const start = owned(u.id);
+  const start = bought(u.id);
   const room = u.max - start;
   if (room <= 0) return 0;
   let n = 0, spent = 0;

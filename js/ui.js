@@ -206,13 +206,13 @@ function buyPerk(pk){
 }
 
 function buy(u){
-  if (owned(u.id) >= u.max) return;
+  if (bought(u.id) >= u.max) return;
   const want = bulkAmount(u);
   const { n, cost } = costOfMany(u, want);
   if (n <= 0 || S.money < cost) return;
   S.money -= cost;
   invest(cost);
-  S.owned[u.id] = owned(u.id) + n;
+  S.owned[u.id] = bought(u.id) + n;
   Sound.buy(); haptic(14);
   checkAchievements();
   draw(); save();
@@ -899,6 +899,7 @@ function loop(now){
     const autoTaps = (perk('avtomat') ? 3 : 0) + (mastered('science') ? 1 : 0);
     if (autoTaps) earn(perTap() * focusMult() * autoTaps * dt);
     regenFocus(dt);
+    tickProduction(dt);
     // улучшение вещи могло доехать прямо сейчас
     if (tickUpgrade()){
       Sound.buy(); haptic([16, 50, 24]);
@@ -1001,11 +1002,14 @@ function draw(){
   if (!shopBuilt) return;
   for (const u of unlockedUpgrades()){
     const el = document.querySelector(`.up[data-id="${u.id}"]`);
-    const n = owned(u.id), maxed = n >= u.max;
+    const n = owned(u.id), maxed = bought(u.id) >= u.max;
     const want = maxed ? 0 : bulkAmount(u);
     const deal = maxed ? { n:0, cost:Infinity } : costOfMany(u, want);
     el.querySelector('.cost').textContent = maxed ? 'предел' : fmt(deal.cost) + '$';
-    el.querySelector('.cnt').textContent = n ? (u.max === Infinity ? `×${n}` : `${n}/${u.max}`) : '';
+    const g = grown(u.id);
+    el.querySelector('.cnt').textContent = n
+      ? (u.max === Infinity ? `×${n}` + (g ? ` (${g} сами)` : '') : `${n}/${u.max}`)
+      : '';
     const cnt2 = el.querySelector('.cnt2');
     if (!maxed && deal.n > 1) cnt2.textContent = '+' + deal.n + ' шт';
     else cnt2.textContent = '';

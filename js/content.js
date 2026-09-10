@@ -11,16 +11,24 @@
 // Без них забег упирался в потолок из семи ступеней, и очки за забег
 // переставали расти после шестого перерождения — сколько ни наращивай
 // множители. Потолок поднимает только лестница, которая стала длиннее.
+// grows: доля в секунду, на которую ступень прирастает сама.
+// Не цепочка вниз, а самопроизводство: соседние доходные ступени различаются
+// по ценности в восемь раз, поэтому производство дешёвой добавляет одну
+// восьмую от того, что даёт производящая — почти ничего. А самопроизводство
+// растёт экспонентой от собственного количества, и это заметно.
+// Описания это и обещали с самого начала: «Собирает, пока ты спишь»,
+// «Течёт сам собой», «Деньги делают деньги», «Растёт без твоего участия».
+// Чем ступень дороже, тем медленнее прирастает.
 const LADDER = [
   { type:'tap',    value:1,    cost:15,       growth:1.15 },
   { type:'income', value:1,    cost:60,       growth:1.15 },
-  { type:'income', value:8,    cost:520,      growth:1.16 },
+  { type:'income', value:8,    cost:520,      growth:1.16, grows:0.0016 },
   { type:'mult',   value:2,    cost:1200,     growth:4.00, max:4 },
-  { type:'income', value:60,   cost:5600,     growth:1.16 },
+  { type:'income', value:60,   cost:5600,     growth:1.16, grows:0.0012 },
   { type:'tap',    value:40,   cost:22000,    growth:1.16 },
-  { type:'income', value:450,  cost:120000,   growth:1.17 },
+  { type:'income', value:450,  cost:120000,   growth:1.17, grows:0.0009 },
   { type:'tap',    value:400,  cost:900000,   growth:1.17, unlock:1 },
-  { type:'income', value:3600, cost:6000000,  growth:1.18, unlock:2 },
+  { type:'income', value:3600, cost:6000000,  growth:1.18, unlock:2, grows:0.0007 },
   { type:'mult',   value:2,    cost:45000000, growth:5.00, max:3, unlock:3 }
 ];
 
@@ -222,7 +230,8 @@ const PATHS = PATH_DEFS.map(def => ({
       cost: base.cost,
       growth: base.growth,
       max: base.max || Infinity,
-      unlock: base.unlock || 0
+      unlock: base.unlock || 0,
+      grows: base.grows || 0
     };
   })
 }));

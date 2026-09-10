@@ -143,6 +143,7 @@ function runOnce(opts){
     if (auto){ const g = perTap() * focusMult() * auto * DT;
                S.money += g; S.totalEarned += g; S.stats.earnedTotal += g; }
     regenFocus(DT);
+    tickProduction(DT);
 
     // --- бонусы ---
     if (!bonusOnScreen && t >= nextBonus){
