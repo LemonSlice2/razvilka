@@ -58,7 +58,10 @@
   #choose h1{font-size:32px;line-height:1.12;letter-spacing:-.4px}
   #choose .lead{color:var(--muted);font-size:14.5px;line-height:1.5;margin-bottom:8px}
   .path{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--pc,var(--accent));
-        border-radius:10px;padding:15px;text-align:left;color:inherit;font:inherit;cursor:pointer;width:100%}
+        border-radius:10px;padding:15px;text-align:left;color:inherit;font:inherit;cursor:pointer;width:100%;
+        display:grid;grid-template-columns:44px 1fr;column-gap:13px;align-items:center}
+  .path .pic{grid-row:1 / span 3;align-self:start;margin-top:2px}
+  .path:disabled .pic{filter:grayscale(1);opacity:.5}
   .path:active{background:var(--surface-2)}
   .path:disabled{opacity:.4;cursor:default;border-left-color:var(--line)}
   .path .name{font-size:18px;font-family:var(--font-serif)}
@@ -183,6 +186,8 @@
   .gearcell.can{border-color:var(--money)}
   .gearcell:disabled{opacity:.45;cursor:default}
   .gearcell:not(:disabled):active{background:var(--surface-2)}
+  .gearcell .gi{display:block;margin:0 auto 2px}
+  .gearcell:disabled:not(.busy) .gi{opacity:.55}
   .gearcell .lvl{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
   .gearcell .gn{font-family:var(--font-serif);font-size:15px;margin:4px 0;
                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -211,7 +216,7 @@
   .pemblem{
     flex:0 0 auto;width:62px;height:62px;border-radius:50%;
     border:2px solid var(--pc,var(--accent));background:var(--surface);
-    display:flex;align-items:center;justify-content:center;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
     font-family:var(--font-serif);font-size:28px;color:var(--pc,var(--accent));
   }
   .pwho{min-width:0}

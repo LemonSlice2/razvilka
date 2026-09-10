@@ -23,7 +23,8 @@ function renderChoice(carry){
     b.style.setProperty('--pc', p.color);
     b.disabled = !open;
     const need = p.unlockAt - runs;
-    b.innerHTML = `<div class="name">${p.name}</div>
+    b.innerHTML = `<img class="pic" src="img/path-${p.id}.webp" alt="" width="44" height="44">
+      <div class="name">${p.name}</div>
       <div class="tag">${open ? p.tagline : 'Пока закрыт.'}</div>` +
       (open && (carry && carry.mastered || []).includes(p.id)
         ? `<div class="done">Освоен · ${MASTERY[p.id].name}</div>` : '') +
@@ -401,6 +402,7 @@ function renderProfile(){
                    : need + ' ✦';
       return `<button class="gearcell${lvl ? ' has' : ''}${can ? ' can' : ''}${busy ? ' busy' : ''}"
                       data-gear="${g.id}" ${can ? '' : 'disabled'}>
+          <img class="gi" src="img/gear-${g.id}.webp" alt="" width="38" height="38">
           <div class="lvl">${lvl ? 'ур. ' + lvl + '/' + GEAR_MAX : '—'}</div>
           <div class="gn">${g.name}</div>
           <div class="ge">${gearEffect(g)}</div>
@@ -411,7 +413,7 @@ function renderProfile(){
      <button id="shopbtn"></button>
      <div id="shoppanel"></div>` +
     `<div class="pcard">
-       <div class="pemblem" style="--pc:${p.color}">${p.name.charAt(0)}</div>
+       <div class="pemblem" style="--pc:${p.color}"><img src="img/path-${p.id}.webp" alt="" width="46" height="46"></div>
        <div class="pwho">
          <div class="pname">${p.name}</div>
          <div class="ptag">${p.tagline}</div>
