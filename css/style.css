@@ -80,13 +80,16 @@
   .focus .cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:5px}
 
   /* тап */
-  #tapzone{display:flex;flex-direction:column;align-items:center;padding:20px 0 14px;position:relative}
-  #tap{width:172px;height:172px;border-radius:50%;border:1px solid var(--line);
-       background:radial-gradient(circle at 38% 32%, var(--surface-2), var(--surface) 70%);
-       color:var(--text);font-family:var(--font-serif);font-size:19px;cursor:pointer;
-       box-shadow:0 0 0 8px rgba(0,0,0,.18)}
-  #tap.hit{transform:scale(.96)}
-  #tap .val{display:block;font-size:13px;color:var(--muted);margin-top:6px;
+  /* Прямоугольная и во всю ширину: круг в 172 пикселя оставлял вокруг себя
+     много пустого места, а попадать по нему приходится постоянно. */
+  #tapzone{display:flex;flex-direction:column;align-items:stretch;padding:10px 0 12px;position:relative}
+  #tap{width:100%;height:210px;border-radius:16px;border:1px solid var(--line);
+       background:radial-gradient(120% 90% at 50% 25%, var(--surface-2), var(--surface) 75%);
+       color:var(--text);font-family:var(--font-serif);font-size:26px;cursor:pointer;
+       box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.28);
+       transition:transform .06s ease-out}
+  #tap.hit{transform:scale(.985)}
+  #tap .val{display:block;font-size:15px;color:var(--muted);margin-top:8px;
             font-family:var(--font-ui);font-variant-numeric:tabular-nums}
   .float{position:absolute;pointer-events:none;color:var(--money);font-size:17px;
          font-variant-numeric:tabular-nums;animation:rise .7s ease-out forwards}
