@@ -325,6 +325,26 @@ function capitalGain(u){
   return '+' + fmt(u.value * n) + ' к основе';
 }
 
+/* Снаряжение в «Капитале». Вещи переживают перерождение и стоили дней
+   ожидания, а на вкладке нажитого их не было вовсе — из всего имущества
+   именно они самые дорогие. Заодно это единственное место, где видно,
+   сколько силы и здоровья даёт каждая вещь по отдельности. */
+function gearGroup(){
+  const has = GEAR.filter(g => gearLevel(g.id) > 0);
+  if (!has.length) return '';
+  return `<div class="capgroup"><h3>Снаряжение</h3>` + has.map(g => {
+    const lvl = gearLevel(g.id);
+    const give = [ g.power  ? '+' + g.power  * lvl + ' силы'     : '',
+                   g.health ? '+' + g.health * lvl + ' здоровья' : '' ].filter(Boolean).join(' · ');
+    return `<div class="capline gear">
+        <img class="gpic" src="img/gear-${g.id}.webp" alt="" width="28" height="28">
+        <span class="n">${g.name}</span>
+        <span class="cnt">ур. ${lvl}/${GEAR_MAX}</span>
+        <span class="give">${give}</span>
+      </div>`;
+  }).join('') + '</div>';
+}
+
 function renderCapital(){
   if (!S || !S.path) return;
   const bought = unlockedUpgrades().filter(u => owned(u.id) > 0);
@@ -358,6 +378,7 @@ function renderCapital(){
        </div>
        <div class="capnote" id="capRun"></div>
      </div>`
+    + gearGroup()
     + group('Отдача от рук', hands, 'tap')
     + group('Работает само', itself, 'inc')
     + (perks.length
@@ -404,6 +425,22 @@ function drawCapitalTotals(){
 /* Кого сейчас смотрим. null — свой профиль. */
 let viewingFoe = null;
 
+/* Звание и сколько до следующего. Полоска заполняется между двумя
+   порогами, а не от нуля: иначе у человека с двадцатью забегами она
+   всегда стояла бы почти полной и ничего не говорила. */
+function rankBar(runs){
+  const now = rankOf(runs), next = rankNext(runs);
+  const left = next ? next.at - runs : 0;
+  const pct = next ? Math.round((runs - now.at) / (next.at - now.at) * 100) : 100;
+  return `<div class="rankbar">
+      <div class="rk">${now.name}</div>
+      <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="rn">${next
+        ? `до «${next.name}» — ${left} ${plural(left,'перерождение','перерождения','перерождений')}`
+        : 'выше некуда'}</div>
+    </div>`;
+}
+
 function renderProfile(){
   if (!S || !S.path) return;
   if (viewingFoe) return renderFoe();
@@ -445,6 +482,7 @@ function renderProfile(){
      <div class="capnote gearnote">${gearHint()}</div>
      <button id="shopbtn"></button>
      <div id="shoppanel"></div>` +
+    rankBar(S.runs) +
     `<div class="pcard">
        <div class="pemblem" style="--pc:${p.color}"><img src="img/path-${p.id}.webp" alt="" width="46" height="46"></div>
        <div class="pwho">
@@ -599,15 +637,21 @@ function renderFoe(){
   const myBp = Math.round(mine.bp || 1000);
   const iAmHim = String(f.id) === String(mine.id);
   const stat = (v, k) => '<div class="pf"><div class="v">' + v + '</div><div class="k">' + k + '</div></div>';
-  const pathName = f.path ? ((PATHS.find(p => p.id === f.path) || {}).name || '') : '';
+  const foePath = f.path ? PATHS.find(p => p.id === f.path) : null;
+  const pathName = (foePath && foePath.name) || '';
   const runsText = f.runs ? ' · ' + f.runs + ' ' + plural(f.runs, 'перерождение', 'перерождения', 'перерождений') : '';
 
   $('profile').innerHTML =
     '<button id="foeback" class="shoptab">← Назад к рейтингу</button>' +
     '<div class="pcard">' +
-      '<div class="pemblem" style="--pc:var(--legacy)">' + escapeText(f.name).charAt(0) + '</div>' +
+      // Путь известен из таблицы — значит, есть и его эмблема. Буква
+      // вместо картинки была заглушкой на случай, когда пути ещё нет.
+      (foePath
+        ? '<div class="pemblem" style="--pc:' + foePath.color + '"><img src="img/path-' + foePath.id + '.webp" alt="" width="46" height="46"></div>'
+        : '<div class="pemblem" style="--pc:var(--legacy)">' + escapeText(f.name).charAt(0) + '</div>') +
       '<div class="pwho">' +
         '<div class="pname">' + escapeText(f.name) + '</div>' +
+        '<div class="prank">' + rankOf(f.runs).name + '</div>' +
         '<div class="ptag">' + pathName + runsText + '</div>' +
       '</div>' +
     '</div>' +
@@ -672,7 +716,7 @@ function rankBoard(p){
   const st = Rating.state;
   const mine = `<div class="rankrow me">
       <span class="place">${(st.me && st.me.place) || '—'}</span>
-      <span class="who">Ты · ${p.name}</span>
+      <span class="who">Ты · ${p.name}<em>${rankOf(S.runs).name}</em></span>
       <span class="score">${Rating.board === 'bp'
         ? Math.round((Rating.state.me && Rating.state.me.bp) || 1000) + ' очк.'
         : fmt(S.stats.earnedTotal) + '$'}</span>
@@ -682,10 +726,12 @@ function rankBoard(p){
     return mine + `<div class="capnote">${RANK_NOTE[st.status] || RANK_NOTE['error']}</div>`;
 
   const meId = st.me && st.me.id;
+  // Звание под именем: ради него сравнение с другими и затевалось —
+  // цифра заработка ничего не говорит о том, сколько человек прожил жизней.
   const rows = st.top.map(r => `
     <button class="rankrow${r.id === meId ? ' me' : ''}" data-foe="${r.id}">
       <span class="place">${r.place}</span>
-      <span class="who">${escapeText(r.name)}</span>
+      <span class="who">${escapeText(r.name)}<em>${rankOf(r.runs).name}</em></span>
       <span class="score">${Rating.board === 'bp' ? Math.round(r.bp) + ' очк.' : fmt(r.score) + '$'}</span>
     </button>`).join('');
 
@@ -806,8 +852,9 @@ function spawnBonus(){
 
   const type = BONUS_TYPES[Math.floor(Math.random() * BONUS_TYPES.length)];
   const el = document.createElement('button');
-  el.className = 'bonus';
-  el.textContent = type.glyph;
+  el.className = 'bonus ' + type.tone;
+  el.innerHTML = `<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">${type.art}</svg>`
+               + `<span class="cap">${type.title}</span>`;
   el.setAttribute('aria-label', 'Бонус: ' + type.title);
   el.style.left = (8 + Math.random() * 70) + '%';
   el.style.top  = (26 + Math.random() * 42) + '%';
@@ -989,7 +1036,13 @@ function draw(){
     rb.classList.remove('hidden');
     $('rebirthPts').textContent = '+' + pts;
     const next = 1 + (S.legacy + pts) * REBIRTH_BONUS;
-    $('rebirthSub').textContent = `Потеряешь всё нажитое, получишь влияние ×${next.toFixed(2)} навсегда`;
+    // Если этим перерождением берётся звание — сказать об этом здесь.
+    // Момент отдать всё нажитое самый тяжёлый в игре, и ровно тут уместно
+    // показать, что взамен даётся не только множитель.
+    const up = rankOf(S.runs + 1);
+    const gain = up.name !== rankOf(S.runs).name ? ` · станешь «${up.name}»` : '';
+    $('rebirthSub').textContent =
+      `Потеряешь всё нажитое, получишь влияние ×${next.toFixed(2)} навсегда${gain}`;
   } else rb.classList.add('hidden');
 
   // способность: откат и готовность

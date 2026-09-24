@@ -284,6 +284,20 @@
   .shoptab{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;
            color:var(--muted);font:inherit;font-size:12.5px;padding:6px 12px;cursor:pointer}
   .shoptab.is-on{color:var(--text);border-color:var(--legacy)}
+  /* ------------------------------------------------------------
+     ЗВАНИЕ
+     Цветом влияния, потому что растёт от того же — от перерождений.
+     Полоска показывает путь между двумя порогами, а не от нуля.
+     ------------------------------------------------------------ */
+  .rankbar{
+    background:var(--surface);border:1px solid var(--legacy);border-radius:10px;
+    padding:11px 13px 12px;margin-bottom:14px;
+  }
+  .rankbar .rk{font-family:var(--font-serif);font-size:18px;color:var(--legacy);margin-bottom:9px}
+  .rankbar .rn{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.35}
+  .rankbar .bar{height:4px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+  .rankbar .fill{height:100%;background:var(--legacy)}
+
   .pcard{display:flex;align-items:center;gap:14px;margin-bottom:16px}
   .pemblem{
     flex:0 0 auto;width:62px;height:62px;border-radius:50%;
@@ -293,6 +307,7 @@
   }
   .pwho{min-width:0}
   .pname{font-family:var(--font-serif);font-size:24px;font-weight:700;letter-spacing:-.3px}
+  .prank{font-size:13px;color:var(--legacy);margin-top:3px}
   .ptag{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.45}
 
   .pfacts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:18px}
@@ -320,7 +335,10 @@
   .rankrow:active{background:var(--surface-2)}
   #foeback{margin-bottom:14px}
   .rankrow .place{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto;min-width:18px}
-  .rankrow .who{flex:1;min-width:0}
+  .rankrow .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  /* звание под именем — длинные имена его не должны сдвигать */
+  .rankrow .who em{display:block;font-style:normal;font-size:11.5px;color:var(--legacy);
+                   margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rankrow .score{color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
 
   /* ============================================================
@@ -354,6 +372,12 @@
   .capline .give{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:13px}
   .capline.tap .give{color:var(--money)}
   .capline.inc .give{color:var(--income)}
+  /* снаряжение: своя картинка есть у каждой вещи, и она тут к месту —
+     строка без неё выглядела как остальные, а вещь стоила дней ожидания */
+  .capline.gear{align-items:center}
+  .capline.gear .gpic{flex:0 0 28px}
+  .capline.gear .give{color:var(--legacy);font-size:12.5px}
+  .capline.gear .cnt{font-size:12px}
   /* У перка в правой колонке не число, а целое предложение. Общий для строк
      white-space:nowrap не давал ему переноситься, и текст наезжал на название.
      Поэтому у перка название и описание встают друг под другом. */
@@ -380,10 +404,30 @@
   .mrow .price{font-size:14.5px;color:var(--legacy);font-variant-numeric:tabular-nums;white-space:nowrap}
   .mrow .price.no{color:var(--muted)}
 
+  /* ------------------------------------------------------------
+     Круглый знак у развилки и способности.
+     Это две главные кнопки после тапа, а выглядели они как обычные
+     строчки списка — и терялись среди десяти строк развития под ними.
+     ------------------------------------------------------------ */
+  .mark{
+    flex:0 0 38px;width:38px;height:38px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--surface-2);border:1px solid currentColor;
+  }
+  .mark svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
   /* развилка */
   #eventcard{width:100%;background:var(--surface);border:1px solid var(--money);border-radius:11px;
              padding:13px 15px;margin:2px 0 12px;color:inherit;font:inherit;text-align:left;cursor:pointer;
              display:flex;align-items:center;gap:12px;animation:pop .3s ease-out}
+  #eventcard .mark{color:var(--money)}
+  #eventcard.lasting .mark{color:var(--legacy)}
+  /* Уклад меняет правила до конца забега — его нельзя пролистать мимо. */
+  #eventcard.lasting{animation:pop .3s ease-out, beat 2.2s ease-in-out .3s infinite}
+  @keyframes beat{
+    0%,100%{box-shadow:0 0 0 0 rgba(155,123,184,0)}
+    50%    {box-shadow:0 0 0 4px rgba(155,123,184,.16)}
+  }
   #eventcard:active{background:var(--surface-2)}
   #eventcard .t{flex:1}
   #eventcard .t .h{font-size:15px;font-family:var(--font-serif);color:var(--money)}
@@ -417,7 +461,10 @@
   #ability .cd{position:absolute;inset:0 auto 0 0;background:var(--surface-2);width:0%;z-index:1}
   #ability.ready{border-color:var(--accent)}
   #ability.ready .when{color:var(--accent)}
+  #ability.ready .mark{color:var(--accent)}
+  /* пока копится — знак приглушён, как и сама кнопка */
   #ability.cooling{border-color:var(--line)}
+  #ability.cooling .mark{color:var(--muted)}
   #ability:active .inner{opacity:.8}
 
   /* прогресс до следующего очка влияния */
@@ -481,13 +528,30 @@
   /* уклад — не временное усиление, а выбранное правило до конца забега */
   .buff.mod{border-color:var(--legacy);color:var(--legacy)}
 
-  /* всплывающий бонус */
-  .bonus{position:fixed;width:64px;height:64px;border-radius:50%;border:none;padding:0;cursor:pointer;
-         background:radial-gradient(circle at 36% 30%, #FFD98A, var(--money) 62%, #A9701F);
-         box-shadow:0 6px 22px rgba(224,163,62,.4);z-index:40;
-         display:flex;align-items:center;justify-content:center;
-         font-family:var(--font-serif);font-size:26px;color:#3A2607;
+  /* ------------------------------------------------------------
+     ВСПЛЫВАЮЩИЙ БОНУС
+     Цвет и знак говорят, что именно ловишь. Раньше все три были одним
+     золотым шариком, и разницу между «Кушем», «Куражом» и «Ветром»
+     человек узнавал уже после того, как поймал.
+
+     Подпись под шариком: у бонуса две секунды жизни, и разбирать знак
+     некогда — слово читается быстрее рисунка.
+     ------------------------------------------------------------ */
+  .bonus{--tone:var(--money);
+         position:fixed;width:64px;height:64px;border-radius:50%;border:none;padding:0;cursor:pointer;
+         background:radial-gradient(circle at 36% 30%, rgba(255,255,255,.55), var(--tone) 58%, rgba(0,0,0,.45));
+         box-shadow:0 6px 22px rgba(0,0,0,.45);z-index:40;
+         display:flex;align-items:center;justify-content:center;color:#241804;
          animation:pop .35s cubic-bezier(.2,1.4,.4,1), pulse 1.6s ease-in-out .35s infinite}
+  .bonus.money {--tone:var(--money)}
+  .bonus.tap   {--tone:var(--accent)}
+  .bonus.income{--tone:var(--income)}
+  .bonus svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+  .bonus .cap{
+    position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);
+    font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--tone);
+    text-shadow:0 1px 5px rgba(0,0,0,.85);
+  }
   .bonus.leaving{animation:fade .3s ease-in forwards}
   @keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
