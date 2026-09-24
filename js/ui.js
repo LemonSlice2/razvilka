@@ -118,12 +118,24 @@ function showChoice(carry){
   if (carry) Store.save({ ...carryOf(carry), path:null, money:0, owned:{}, perks:[], totalEarned:0, ts:Date.now() });
 }
 
+/* Цвета путей лежат в данных как #RRGGBB, а фону нужен полупрозрачный.
+   Через color-mix было бы короче, но он моложе части телефонов, на которых
+   в игру уже играют, и там солнце просто не зажглось бы. */
+function hexAlpha(hex, a){
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16 & 255}, ${n >> 8 & 255}, ${n & 255}, ${a})`;
+}
+
 function start(state, offlineEarned){
   S = state;
-  document.documentElement.style.setProperty('--accent', path().color);
+  const root = document.documentElement;
+  root.style.setProperty('--accent', path().color);
+  // Солнцу нужен тот же цвет, но полупрозрачным: свет, а не заливка.
+  root.style.setProperty('--sun', hexAlpha(path().color, 0.17));
   $('choose').classList.add('hidden');
   $('game').classList.remove('hidden');
   $('taplabel').textContent = path().tapLabel;
+  $('tapface').src = 'img/path-' + S.path + '.webp';
 
   const w = $('welcome');
   if (offlineEarned > 0){
@@ -162,6 +174,23 @@ function effectText(u){
 }
 
 let shopBuilt = false;
+/* Значок ступени. Рисуется по типу, а не по названию: названий пятьдесят
+   (десять на каждый путь), а типов три — иначе пришлось бы держать полсотни
+   картинок ради списка, который и так подписан словами.
+   Рука — платят за нажатие, стрелка по кругу — идёт само, ×N — множитель. */
+const RUNG_ART = {
+  tap:    '<path d="M9 11.5V5.4a1.5 1.5 0 0 1 3 0v5.1m0-1.6a1.5 1.5 0 0 1 3 0v1.6m0-1.1a1.5 1.5 0 0 1 3 0v5.1a5 5 0 0 1-5 5h-1a4 4 0 0 1-3-1.4l-3.2-3.7a1.6 1.6 0 0 1 2.3-2.2L9 14.2"/>',
+  income: '<path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20.2 3.8v4.4h-4.4"/>',
+  mult:   null   // у множителя вместо рисунка его же число: крестик читался как «удалить»
+};
+function rungArt(u){
+  const art = RUNG_ART[u.type];
+  const inner = art
+    ? `<svg viewBox="0 0 24 24" width="21" height="21" aria-hidden="true">${art}</svg>`
+    : `<b>×${u.value}</b>`;
+  return `<span class="ic ${u.type}">${inner}</span>`;
+}
+
 function buildShop(){
   const tapList = $('uplist-tap'), incList = $('uplist-income');
   tapList.innerHTML = ''; incList.innerHTML = '';
@@ -169,7 +198,7 @@ function buildShop(){
     const b = document.createElement('button');
     b.className = 'up';
     b.dataset.id = u.id;
-    b.innerHTML = `<div class="body">
+    b.innerHTML = `${rungArt(u)}<div class="body">
         <div class="n">${u.name} <em class="cnt"></em></div>
         <div class="d"><b>${effectText(u)}</b> · ${u.desc} <span class="cnt2"></span></div>
       </div><div class="cost"></div>`;
@@ -845,6 +874,16 @@ function doTap(x, y){
   const btn = $('tap');
   btn.classList.add('hit');
   setTimeout(() => btn.classList.remove('hit'), 70);
+
+  // волна от места касания: при мультитаче видно, что засчитан каждый палец
+  const bb = btn.getBoundingClientRect();
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  r.style.left = (x - bb.left) + 'px';
+  r.style.top  = (y - bb.top)  + 'px';
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 440);
+
   draw();
 }
 const tapBtn = $('tap');
@@ -929,6 +968,8 @@ function draw(){
 
   const pct = S.focus / FOCUS_MAX;
   $('focusfill').style.width = (pct * 100) + '%';
+  // та же величина гасит свечение и эмблему на кнопке — усталость видно там, куда смотрят
+  $('tap').style.setProperty('--f', pct.toFixed(3));
   $('focusnote').textContent = pct > .75 ? 'полная отдача' : pct > .35 ? 'отдача падает' : 'нужен передых';
 
   // активные усиления

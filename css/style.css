@@ -40,17 +40,36 @@
     --income:#8FA96C;
     --legacy:#9B7BB8;
     --accent:#B4553F;
+    /* свет до выбора пути; дальше start() переставляет его в цвет пути */
+    --sun:rgba(180,85,63,.15);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    background:var(--bg);color:var(--text);
+    color:var(--text);
     font-family:var(--font-ui);
     -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;
     touch-action:manipulation;overscroll-behavior:none;display:flex;justify-content:center;
   }
   #app{width:100%;max-width:460px;min-height:100%;display:flex;flex-direction:column;
        padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
+
+  /* ------------------------------------------------------------
+     СОЛНЦЕ
+     Игра называется «Под солнцем», а на экране была ровная темнота.
+
+     Свет живёт в фоне (`background-attachment:fixed`), а не отдельным слоем
+     поверх: шапка липкая и непрозрачная, любой слой под ней просто пропал бы
+     ровно в той полосе, где солнце и светит. Фон с привязкой к окну рисуется
+     от края окна у обоих, поэтому шапка продолжает страницу без шва.
+
+     Цвет `--sun` ставит start() из цвета пути — свет меняется вместе с путём.
+     ------------------------------------------------------------ */
+  body, header{
+    background:
+      radial-gradient(150% 440px at 50% -70px, var(--sun, transparent), transparent 72%) fixed,
+      var(--bg);
+  }
   h1,h2,.serif{font-family:var(--font-serif);font-weight:700}
 
   /* выбор пути */
@@ -71,7 +90,7 @@
   /* шапка */
   /* Липкая: развитие теперь внизу «Тапов», и при прокрутке к магазину
      деньги с доходом должны оставаться на виду — иначе непонятно, на что хватает. */
-  header{padding:13px 0 9px;position:sticky;top:0;z-index:20;background:var(--bg)}
+  header{padding:13px 0 9px;position:sticky;top:0;z-index:20}
   .capital{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
   .capital .sum{font-size:34px;color:var(--money);letter-spacing:-1px;font-variant-numeric:tabular-nums}
   .capital .per{font-size:13.5px;color:var(--income);font-variant-numeric:tabular-nums}
@@ -82,22 +101,64 @@
   .focus .fill{height:100%;background:var(--accent);width:100%;transition:width .12s linear}
   .focus .cap{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:5px}
 
-  /* тап */
-  /* Прямоугольная и во всю ширину: круг в 172 пикселя оставлял вокруг себя
-     много пустого места, а попадать по нему приходится постоянно. */
+  /* ============================================================
+     ТАП
+     Прямоугольная и во всю ширину: круг в 172 пикселя оставлял вокруг себя
+     много пустого места, а попадать по нему приходится постоянно.
+
+     Внутри — эмблема пути. Это единственная картинка на экране, где игрок
+     проводит всю игру, и она же делает пять путей различимыми с одного
+     взгляда: раньше отличалось только слово на кнопке.
+
+     Яркость свечения = концентрация (`--f`, ставит draw()). Полоска в шапке
+     остаётся, но смотрят-то на кнопку — усталость должна быть видна там,
+     куда смотрят, а не там, где для неё нашлось место.
+     ============================================================ */
   #tapzone{display:flex;flex-direction:column;align-items:stretch;padding:10px 0 12px;position:relative}
-  #tap{width:100%;height:210px;border-radius:16px;border:1px solid var(--line);
-       background:radial-gradient(120% 90% at 50% 25%, var(--surface-2), var(--surface) 75%);
-       color:var(--text);font-family:var(--font-serif);font-size:26px;cursor:pointer;
-       box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.28);
-       transition:transform .06s ease-out}
+  #tap{
+    --f:1;
+    width:100%;height:210px;border-radius:16px;border:1px solid var(--line);
+    background:radial-gradient(120% 90% at 50% 25%, var(--surface-2), var(--surface) 75%);
+    color:var(--text);font-family:var(--font-serif);font-size:26px;cursor:pointer;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.28);
+    transition:transform .06s ease-out, border-color .3s linear;
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  }
   #tap.hit{transform:scale(.985)}
-  #tap .val{display:block;font-size:15px;color:var(--muted);margin-top:8px;
+  #tap .lab{display:block;position:relative;z-index:2;line-height:1.15}
+  #tap .val{display:block;font-size:15px;color:var(--muted);margin-top:6px;
             font-family:var(--font-ui);font-variant-numeric:tabular-nums}
-  .float{position:absolute;pointer-events:none;color:var(--money);font-size:17px;
+
+  /* свечение под эмблемой: живёт от концентрации */
+  #tap .halo{
+    position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;
+    border-radius:50%;pointer-events:none;z-index:0;
+    background:radial-gradient(circle, var(--accent) 0%, transparent 62%);
+    opacity:calc(.05 + var(--f) * .22);
+    transition:opacity .25s linear;
+  }
+  #tap .face{
+    position:relative;z-index:1;display:block;
+    filter:drop-shadow(0 3px 10px rgba(0,0,0,.5));
+    opacity:calc(.55 + var(--f) * .45);
+    transition:opacity .25s linear, transform .06s ease-out;
+  }
+  #tap.hit .face{transform:scale(.94)}
+
+  /* волна от места касания — подтверждение, что попал именно сюда */
+  .ripple{
+    position:absolute;z-index:1;width:20px;height:20px;margin:-10px 0 0 -10px;
+    border-radius:50%;pointer-events:none;background:var(--accent);
+    animation:ripple .42s ease-out forwards;
+  }
+  @keyframes ripple{from{transform:scale(.4);opacity:.3}to{transform:scale(7);opacity:0}}
+
+  .float{position:absolute;pointer-events:none;color:var(--money);font-size:19px;font-weight:600;
+         text-shadow:0 2px 8px rgba(0,0,0,.6);
          font-variant-numeric:tabular-nums;animation:rise .7s ease-out forwards}
-  .float.crit{color:#FF9B6B;font-size:22px;font-weight:600}
-  @keyframes rise{to{transform:translateY(-46px);opacity:0}}
+  .float.crit{color:#FF9B6B;font-size:26px;font-weight:600}
+  @keyframes rise{to{transform:translateY(-52px);opacity:0}}
 
   /* перерождение */
   #rebirth{width:100%;background:var(--surface);border:1px solid var(--legacy);border-radius:10px;
@@ -117,6 +178,17 @@
       text-align:left;color:inherit;font:inherit;cursor:pointer}
   .up:disabled{opacity:.42;cursor:default}
   .up:not(:disabled):active{background:var(--surface-2)}
+  /* Значок ступени. Цвет говорит то же, что и колонка, в которой строка лежит:
+     жёлтый — платят за руки, зелёный — идёт само, сиреневый — множитель. */
+  .up .ic{flex:0 0 34px;width:34px;height:34px;border-radius:9px;
+          display:flex;align-items:center;justify-content:center;
+          background:var(--surface-2);border:1px solid var(--line)}
+  .up .ic svg{fill:none;stroke:currentColor;stroke-width:1.6;
+              stroke-linecap:round;stroke-linejoin:round}
+  .up .ic b{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums}
+  .up .ic.tap{color:var(--money)}
+  .up .ic.income{color:var(--income)}
+  .up .ic.mult{color:var(--legacy)}
   .up .body{flex:1;min-width:0}
   .up .n{font-size:15px}
   .up .n em{font-style:normal;color:var(--muted);font-size:12.5px}
