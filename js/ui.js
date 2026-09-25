@@ -201,6 +201,7 @@ function buildShop(){
     b.innerHTML = `${rungArt(u)}<div class="body">
         <div class="n">${u.name} <em class="cnt"></em></div>
         <div class="d"><b>${effectText(u)}</b> · ${u.desc} <span class="cnt2"></span></div>
+        <div class="mile hidden"><span class="mt"></span><span class="mbar"><i></i></span></div>
       </div><div class="cost"></div>`;
     b.addEventListener('click', () => buy(u));
     // множитель усиливает силу тапа, поэтому лежит вместе с тапом, а не отдельно
@@ -898,6 +899,34 @@ function spawnBonus(){
   }, BONUS_LIFE * (perk('apparat') ? 2.5 : 1) * 1000);
 }
 
+/* Веха в строке развития. Сначала число, потом всё остальное: живые игроки уже
+   жаловались, что образ без цифры ничего не объясняет. Поэтому здесь словами
+   написано, сколько осталось и что за это дадут, а полоска только помогает
+   оценить расстояние взглядом. Множителю вехи не положены — он до двадцати
+   пяти штук не доживает. */
+function drawMilestone(el, u){
+  const box = el.querySelector('.mile');
+  if (!box) return;
+  const got = bought(u.id);
+  if (u.type === 'mult' || got === 0){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+
+  const taken = milestonesOf(u.id);
+  const left  = toNextMilestone(u.id);
+  const now   = milestoneMult(u.id);
+  const next  = now * MILESTONE_MULT;
+
+  // Ведём с того числа, на которое игрок действует: сколько ещё докупить.
+  box.querySelector('.mt').textContent = left === 0
+    ? `×${now.toFixed(2)} за количество · предел`
+    : `ещё ${left} до ×${next.toFixed(2)}`
+      + (taken ? ` · сейчас ×${now.toFixed(2)}` : '');
+
+  const pct = left === 0 ? 100 : (MILESTONE_EVERY - left) / MILESTONE_EVERY * 100;
+  box.querySelector('.mbar i').style.width = pct + '%';
+  box.classList.toggle('done', left === 0);
+}
+
 /* ---------- тап ---------- */
 function doTap(x, y){
   let critMult = 1;
@@ -1135,6 +1164,7 @@ function draw(){
     const cnt2 = el.querySelector('.cnt2');
     if (!maxed && deal.n > 1) cnt2.textContent = '+' + deal.n + ' шт';
     else cnt2.textContent = '';
+    drawMilestone(el, u);
     el.disabled = maxed || S.money < deal.cost;
   }
 }

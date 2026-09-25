@@ -195,6 +195,16 @@
   .up .d{font-size:12.5px;color:var(--muted);margin-top:2px}
   .up .d b{color:var(--income);font-weight:600}
   .up .cost{font-size:14.5px;color:var(--money);font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* веха по количеству: сколько осталось до следующего усиления ступени */
+  /* Полоска отдельной строкой, а не рядом с текстом: во flex-ряду она
+     схлопывалась до огрызка и читалась как случайная чёрточка. */
+  .up .mile{margin-top:6px}
+  .up .mile .mt{display:block;font-size:11px;color:var(--legacy);margin-bottom:4px}
+  .up .mile .mbar{display:block;height:3px;background:var(--surface-2);
+                  border-radius:2px;overflow:hidden}
+  .up .mile .mbar i{display:block;height:100%;background:var(--legacy);width:0}
+  .up .mile.done .mt{color:var(--muted)}
+  .up .mile.done .mbar i{background:var(--muted)}
 
   #welcome{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
            padding:12px 14px;margin:8px 0;font-size:13.5px;line-height:1.45;color:var(--muted)}

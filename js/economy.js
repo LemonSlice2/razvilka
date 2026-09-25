@@ -102,6 +102,34 @@ function bought(id){ return S.owned[id] || 0; }
 function grown(id){ return Math.floor((S.grown && S.grown[id]) || 0); }
 function owned(id){ return bought(id) + grown(id); }
 
+/* ---------- вехи по количеству ----------
+   Семьдесят восьмая покупка ступени ничем не отличалась от первой: ни цели,
+   ни награды, ни отметки. Это самая плоская часть игры, а смотрит игрок на неё
+   дольше, чем на что-либо ещё. Теперь каждые MILESTONE_EVERY купленных штук
+   ступень усиливается, и у строки появляется близкая цель.
+
+   Считается по bought(), а не по owned(): выросшие сами штуки набегают
+   экспонентой, и вехи на них разогнали бы доход до взрыва — те же грабли,
+   что уже описаны про темп самопроизводства.
+
+   Предел обязателен: множитель без потолка ломает экономику. Четыре вехи дают
+   ступени ×2.44 и дальше не растут. */
+const MILESTONE_EVERY = 25;
+const MILESTONE_MULT  = 1.25;
+const MILESTONE_MAX   = 4;
+
+function milestonesOf(id){
+  return Math.min(MILESTONE_MAX, Math.floor(bought(id) / MILESTONE_EVERY));
+}
+function milestoneMult(id){
+  return Math.pow(MILESTONE_MULT, milestonesOf(id));
+}
+// Сколько осталось до следующей вехи; 0 — предел взят
+function toNextMilestone(id){
+  if (milestonesOf(id) >= MILESTONE_MAX) return 0;
+  return MILESTONE_EVERY - (bought(id) % MILESTONE_EVERY);
+}
+
 /* Самопроизводство. Ступень прирастает долей от собственного количества,
    поэтому растёт экспонентой, а не линейно — и это видно за один забег.
    Растёт и то, что выросло само: иначе прирост быстро упёрся бы в потолок. */
@@ -159,7 +187,9 @@ function perTap(){
   let flat = 1, mult = 1;
   for (const u of path().upgrades){
     const n = owned(u.id); if (!n) continue;
-    if (u.type === 'tap')  flat += u.value * n;
+    // Вехи множителю не дают: он упирается в свой max на четвёртой покупке
+    // и до двадцати пяти штук не доходит никогда.
+    if (u.type === 'tap')  flat += u.value * n * milestoneMult(u.id);
     if (u.type === 'mult') mult *= Math.pow(u.value, n);
   }
   return flat * mult * legacyMult() * achMult()
@@ -168,7 +198,7 @@ function perTap(){
 }
 function perSecond(){
   let sum = 0;
-  for (const u of path().upgrades) if (u.type === 'income') sum += u.value * owned(u.id);
+  for (const u of path().upgrades) if (u.type === 'income') sum += u.value * owned(u.id) * milestoneMult(u.id);
   return sum * legacyMult() * achMult() * buffMult('income') * modOf('income');
 }
 function focusMult(){
