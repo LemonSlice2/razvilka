@@ -5,3 +5,6 @@ fonts/_source/
 server/node_modules/
 server/.wrangler/
 img/_source/
+
+# Ключи от нейросетей. В репозиторий не попадают никогда.
+.env

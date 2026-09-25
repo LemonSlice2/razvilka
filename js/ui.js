@@ -433,11 +433,14 @@ function rankBar(runs){
   const left = next ? next.at - runs : 0;
   const pct = next ? Math.round((runs - now.at) / (next.at - now.at) * 100) : 100;
   return `<div class="rankbar">
-      <div class="rk">${now.name}</div>
-      <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
-      <div class="rn">${next
-        ? `до «${next.name}» — ${left} ${plural(left,'перерождение','перерождения','перерождений')}`
-        : 'выше некуда'}</div>
+      <img class="rpic" src="img/rank-${now.art}.webp" alt="" width="52" height="52">
+      <div class="rbody">
+        <div class="rk">${now.name}</div>
+        <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+        <div class="rn">${next
+          ? `до «${next.name}» — ${left} ${plural(left,'перерождение','перерождения','перерождений')}`
+          : 'выше некуда'}</div>
+      </div>
     </div>`;
 }
 
@@ -651,7 +654,7 @@ function renderFoe(){
         : '<div class="pemblem" style="--pc:var(--legacy)">' + escapeText(f.name).charAt(0) + '</div>') +
       '<div class="pwho">' +
         '<div class="pname">' + escapeText(f.name) + '</div>' +
-        '<div class="prank">' + rankOf(f.runs).name + '</div>' +
+        '<div class="prank"><img src="img/rank-' + rankOf(f.runs).art + '.webp" alt="" width="18" height="18">' + rankOf(f.runs).name + '</div>' +
         '<div class="ptag">' + pathName + runsText + '</div>' +
       '</div>' +
     '</div>' +
@@ -716,7 +719,7 @@ function rankBoard(p){
   const st = Rating.state;
   const mine = `<div class="rankrow me">
       <span class="place">${(st.me && st.me.place) || '—'}</span>
-      <span class="who">Ты · ${p.name}<em>${rankOf(S.runs).name}</em></span>
+      <span class="who">Ты · ${p.name}<em><img src="img/rank-${rankOf(S.runs).art}.webp" alt="" width="16" height="16">${rankOf(S.runs).name}</em></span>
       <span class="score">${Rating.board === 'bp'
         ? Math.round((Rating.state.me && Rating.state.me.bp) || 1000) + ' очк.'
         : fmt(S.stats.earnedTotal) + '$'}</span>
@@ -731,7 +734,7 @@ function rankBoard(p){
   const rows = st.top.map(r => `
     <button class="rankrow${r.id === meId ? ' me' : ''}" data-foe="${r.id}">
       <span class="place">${r.place}</span>
-      <span class="who">${escapeText(r.name)}<em>${rankOf(r.runs).name}</em></span>
+      <span class="who">${escapeText(r.name)}<em><img src="img/rank-${rankOf(r.runs).art}.webp" alt="" width="16" height="16">${rankOf(r.runs).name}</em></span>
       <span class="score">${Rating.board === 'bp' ? Math.round(r.bp) + ' очк.' : fmt(r.score) + '$'}</span>
     </button>`).join('');
 
