@@ -210,16 +210,37 @@ const BONUS_TYPES = [
   { id:'kush',  title:'Куш', tone:'money',
     art:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.2v9.6M14.6 9.6c0-1.1-1.2-1.7-2.6-1.7s-2.6.6-2.6 1.7 1 1.5 2.6 1.9 2.8.8 2.8 2-1.3 1.9-2.8 1.9-2.6-.6-2.7-1.8"/>',
     text: n => `+${n}$`,
-    apply(){ const amount = Math.max(perSecond() * 45, perTap() * 30) * (perk('videnie') ? 2 : 1);
+    apply(){ const amount = Math.max(perSecond() * 115, perTap() * 78) * (perk('videnie') ? 2 : 1);
              earn(amount); return fmt(amount) + '$'; } },
   { id:'kuraj', title:'Кураж', tone:'tap',
     art:'<path d="M13.4 2.6 5.2 13.4h5.3L9.8 21.4 18.6 10.2h-5.6z" stroke-linejoin="round"/>',
     apply(){ const d = perk('videnie') ? 2 : 1;
-             addBuff('tap', 7, 25 * d); return '×7 к тапу'; } },
+             addBuff('tap', 4, 20 * d); return '×4 к тапу'; } },
   { id:'veter', title:'Попутный ветер', tone:'income',
     art:'<path d="M3 8.2h9.2a2.9 2.9 0 1 0-2.9-2.9M3 12.2h12.6a2.9 2.9 0 1 1-2.9 2.9M3 16.2h7.4"/>',
     apply(){ const d = perk('videnie') ? 2 : 1;
-             addBuff('income', 5, 30 * d); return '×5 к доходу'; } }
+             addBuff('income', 6, 35 * d); return '×6 к доходу'; } },
+
+  /* Дальше — бонусы с другим глаголом, а не с другим множителем. Первые три
+     сводились к «цифры больше»: поймал и тапаешь дальше ровно так же. Эти три
+     меняют, что делать прямо сейчас: можно не беречь концентрацию, выгодно
+     бежать закупаться, выгодно молотить не глядя на усталость. */
+  { id:'dyhanie', title:'Второе дыхание', tone:'focus',
+    art:'<path d="M4.2 17a8 8 0 1 1 15.6 0"/><path d="M12 17l4.6-5.2"/>',
+    apply(){ const d = perk('videnie') ? 2 : 1;
+             const sec = 20 * d;
+             S.focus = FOCUS_MAX; addBuff('nofocus', 1, sec); addBuff('tap', 2.2, sec);
+             return sec + ' секунд без усталости, тап ×2.2'; } },
+
+  { id:'skidka', title:'Скидка', tone:'money',
+    art:'<path d="M3.6 12.6 12.2 4h6.9v6.9l-8.6 8.6a1.9 1.9 0 0 1-2.7 0l-4.2-4.2a1.9 1.9 0 0 1 0-2.7z"/><circle cx="15.8" cy="8.2" r="1.3"/>',
+    apply(){ const d = perk('videnie') ? 2 : 1;
+             addBuff('cost', 0.42, 30 * d); return 'развитие дешевле на 58%'; } },
+
+  { id:'razgon', title:'Разгон', tone:'tap',
+    art:'<path d="M4.5 6.5 10 12l-5.5 5.5M13 6.5 18.5 12 13 17.5"/>',
+    apply(){ const d = perk('videnie') ? 2 : 1;
+             const n = 32 * d; addCharges(n, 6); return n + ' тапов ×6'; } }
 ];
 
 /* Через сколько секунд придёт следующий бонус или следующая развилка.
@@ -259,7 +280,14 @@ function buffActive(kind){
 
 // Заряды тратятся тапами, а не временем — отдельный счётчик
 let charges = { left: 0, mult: 1 };
-function addCharges(count, mult){ charges = { left: count, mult }; }
+/* Заряды не затирают друг друга. Раньше присвоение было безусловным, и бонус
+   «Разгон» (15 тапов ×5), пойманный поверх Ритуала Ордена (20 тапов ×7),
+   отнимал больше, чем давал. Пойманное поверх более сильного теперь просто
+   продлевает счётчик, а более сильное перебивает слабое. */
+function addCharges(count, mult){
+  if (charges.left > 0 && charges.mult > mult) charges.left += count;
+  else charges = { left: count, mult };
+}
 function chargeMult(){ return charges.left > 0 ? charges.mult : 1; }
 function spendCharge(){ if (charges.left > 0) charges.left--; }
 
