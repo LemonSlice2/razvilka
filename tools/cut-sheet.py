@@ -88,6 +88,58 @@ def cut(sheet, row, col):
     return sq.resize((SIZE, SIZE), Image.LANCZOS)
 
 
+# ---------------------------------------------------------------------------
+# Комикс. Тут всё иначе, чем со знаками, и по двум причинам.
+#
+# Прозрачность не делаем. Кадры пришли косыми, чёрное вокруг них — #170E09,
+# то есть фон игры с точностью до неразличимого. А у четвёртого кадра своё
+# чёрное небо слито с этим полем, и заливка от углов выела бы полкадра.
+#
+# Рамка у всех четырёх общая, а не своя у каждого. Сами рисунки разной
+# высоты, и по своим рамкам кадры сели бы в сетку лесенкой.
+# ---------------------------------------------------------------------------
+COMIC       = os.path.join(ROOT, 'img', '_source', 'intro-sheet.webp')
+COMIC_OUT   = 'intro-%d'
+COMIC_WIDE  = 384       # ширина готового кадра: вдвое от места в вёрстке
+COMIC_FLOOR = 110       # сумма каналов, выше которой пиксель считается рисунком
+
+
+def cut_comic():
+    sheet = Image.open(COMIC).convert('RGB')
+    w, h = sheet.size
+    qw, qh = w // 2, h // 2
+    px = sheet.load()
+
+    # Общая рамка: объединяем рамки всех четырёх четвертей в местных координатах
+    x0, y0, x1, y1 = qw, qh, 0, 0
+    for qy in range(2):
+        for qx in range(2):
+            for y in range(qh):
+                for x in range(qw):
+                    r, g, b = px[qx * qw + x, qy * qh + y]
+                    if r + g + b > COMIC_FLOOR:
+                        if x < x0: x0 = x
+                        if y < y0: y0 = y
+                        if x > x1: x1 = x
+                        if y > y1: y1 = y
+    pad = 6
+    x0 = max(0, x0 - pad); y0 = max(0, y0 - pad)
+    x1 = min(qw - 1, x1 + pad); y1 = min(qh - 1, y1 + pad)
+    bw, bh = x1 - x0 + 1, y1 - y0 + 1
+    print('  общая рамка кадра: %dx%d' % (bw, bh))
+
+    total = 0
+    for i, (qy, qx) in enumerate([(0, 0), (0, 1), (1, 0), (1, 1)], start=1):
+        panel = sheet.crop((qx * qw + x0, qy * qh + y0, qx * qw + x1 + 1, qy * qh + y1 + 1))
+        panel = panel.resize((COMIC_WIDE, round(COMIC_WIDE * bh / bw)), Image.LANCZOS)
+        path = os.path.join(OUT, (COMIC_OUT % i) + '.webp')
+        panel.save(path, 'WEBP', quality=84, method=6)
+        size = os.path.getsize(path)
+        total += size
+        print('  %-18s %5d байт  %dx%d' % ((COMIC_OUT % i) + '.webp', size, panel.size[0], panel.size[1]))
+    print('комикс: %d байт на 4 кадра' % total)
+
+
 def main():
     sheet = Image.open(SHEET)
     total = 0
@@ -99,6 +151,8 @@ def main():
         total += size
         print('  %-18s %5d байт' % (name + '.webp', size))
     print('всего: %d байт на %d иконок' % (total, len(CELLS)))
+    if os.path.exists(COMIC):
+        cut_comic()
 
 
 if __name__ == '__main__':

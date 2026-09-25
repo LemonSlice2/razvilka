@@ -52,6 +52,10 @@ function carryOf(src){
     gear: src && src.gear ? { ...src.gear } : {},
     crystals: src && src.crystals !== undefined ? src.crystals : 0,
     upgrade: src && src.upgrade ? { ...src.upgrade } : null,
+    // Объяснение перерождения показывается один раз за всю жизнь аккаунта,
+    // поэтому метка переживает сам сброс забега. Иначе она стиралась бы
+    // ровно тем событием, про которое и рассказывает.
+    toldRebirth: !!(src && src.toldRebirth),
     stats: {
       taps:    src && src.stats ? (src.stats.taps    || 0) : 0,
       bonuses: src && src.stats ? (src.stats.bonuses || 0) : 0,

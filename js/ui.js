@@ -851,7 +851,9 @@ function scheduleBonus(first){
 }
 
 function spawnBonus(){
-  if (!S || !S.path || !$('modal').classList.contains('hidden')) { scheduleBonus(false); return; }
+  if (!S || !S.path
+      || !$('modal').classList.contains('hidden')
+      || !$('intro').classList.contains('hidden')) { scheduleBonus(false); return; }
 
   const type = BONUS_TYPES[Math.floor(Math.random() * BONUS_TYPES.length)];
   const el = document.createElement('button');
@@ -944,6 +946,19 @@ tapBtn.addEventListener('touchstart', e => {
 }, {passive:false});
 tapBtn.addEventListener('mousedown', e => { if (e.button === 0) doTap(e.clientX, e.clientY); });
 $('rebirth').addEventListener('click', doRebirth);
+
+/* Объяснение перерождения. Метку ставим сразу, до закрытия: иначе человек
+   свернул бы игру, не нажав «Понятно», и получил бы то же окно ещё раз. */
+function showIntro(){
+  if (!S || S.toldRebirth) return;
+  S.toldRebirth = true;
+  save();
+  $('intro').classList.remove('hidden');
+}
+$('introOk').addEventListener('click', () => {
+  $('intro').classList.add('hidden');
+  Sound.wake(); haptic(12);
+});
 
 function drawSound(){
   const b = $('sound');
@@ -1038,6 +1053,9 @@ function draw(){
   if (pts >= REBIRTH_MIN){
     rb.classList.remove('hidden');
     $('rebirthPts').textContent = '+' + pts;
+    // Первое в жизни появление кнопки — единственный момент, когда объяснение
+    // уместно: раньше понимать нечего, позже человек уже решил, что игра кончилась.
+    if (S.runs === 0 && !S.toldRebirth) showIntro();
     const next = 1 + (S.legacy + pts) * REBIRTH_BONUS;
     // Если этим перерождением берётся звание — сказать об этом здесь.
     // Момент отдать всё нажитое самый тяжёлый в игре, и ровно тут уместно

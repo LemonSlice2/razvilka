@@ -566,6 +566,35 @@
         font-family:var(--font-serif);font-size:20px;
         animation:rise 1s ease-out forwards}
 
+  /* ------------------------------------------------------------
+     ОБЪЯСНЕНИЕ ПЕРЕРОЖДЕНИЯ
+     Четыре кадра плюс подписи. Прокручивается, потому что на невысоком
+     телефоне четыре картинки с текстом в экран не влезают, а резать
+     историю на «дальше» значит потерять половину читателей на втором шаге.
+     ------------------------------------------------------------ */
+  #intro{
+    position:fixed;inset:0;z-index:60;background:rgba(10,7,5,.88);
+    display:flex;align-items:center;justify-content:center;padding:16px;
+    overflow-y:auto;
+  }
+  #intro .card{
+    width:100%;max-width:420px;margin:auto;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;
+  }
+  #intro h2{font-size:21px;margin-bottom:14px;letter-spacing:-.2px}
+  #intro .strip{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  #intro figure{min-width:0}
+  #intro figure img{
+    display:block;width:100%;height:auto;border-radius:9px;
+    background:var(--bg);border:1px solid var(--line);
+  }
+  #intro figcaption{font-size:12px;color:var(--muted);line-height:1.4;margin-top:6px}
+  #introOk{
+    width:100%;margin-top:16px;padding:13px;border-radius:9px;font:inherit;font-size:15px;
+    cursor:pointer;border:1px solid var(--legacy);background:var(--legacy);color:#17110D;font-weight:600;
+  }
+  #introOk:active{opacity:.82}
+
   /* собственное окно подтверждения: системный confirm() блокируется в песочнице */
   #modal{position:fixed;inset:0;background:rgba(10,7,5,.72);display:flex;align-items:center;
          justify-content:center;padding:22px;z-index:50}
